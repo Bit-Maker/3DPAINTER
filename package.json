@@ -10,7 +10,10 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
+    "three": "^0.182.0",
+    "three-stdlib": "^2.36.1",
+    "web-vitals": "^2.1.4",
+    "xatlas-three": "^0.2.1"
   },
   "scripts": {
     "start": "react-scripts start",

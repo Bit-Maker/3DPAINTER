@@ -1,0 +1,46 @@
+.texture-editor-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px; 
+    width: 300px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    transition: opacity 0.3s ease;
+    opacity: 0.6; 
+}
+
+.texture-editor-panel.active {
+    opacity: 1; 
+}
+
+.texture-editor-panel h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.canvas-container {
+    width: 100%;
+    aspect-ratio: 1 / 1; 
+    background-color: #ccc;
+    border: 2px solid #555;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.texture-canvas-display {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    image-rendering: pixelated; 
+}

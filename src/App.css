@@ -1,38 +1,41 @@
+/* App.css */
+:root {
+  --bg-dark: #1e1e1e;
+  --panel-bg: rgba(30, 30, 30, 0.85); /* Vidro escuro */
+  --text-primary: #e0e0e0;
+  --text-secondary: #aaaaaa;
+  --accent-blue: #2196f3;
+  --accent-pink: #e91e63;
+  --border-color: #444;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+}
+
 .App {
-  text-align: center;
+  position: relative; /* Pai relativo para os filhos absolutos */
+  width: 100vw;
+  height: 100vh;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Garante que o Canvas 3D fique no fundo */
+.App > div:first-of-type {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Cursor customizado (Bolinha) */
+.brush-cursor {
+  pointer-events: none; /* O clique passa através dele */
+  z-index: 9999;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
 }
