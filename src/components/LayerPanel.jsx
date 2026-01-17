@@ -26,7 +26,7 @@ const LayerPanel = ({ layers, activeLayerId, setLayers, setActiveLayerId, onUpda
     };
 
     return (
-        <div className="ui-panel" style={{right: '10px', left: 'auto', top: '45vh', height: 'auto', height:'50vh', overflowY:'auto'}}>
+        <div className="ui-panel" style={{right: '10px', left: 'auto', top: '45vh', height:'50vh', overflowY:'auto'}}>
             <h3>Camadas</h3>
             <button onClick={addLayer} style={{marginBottom: '10px', width: '100%', background: '#4CAF50'}}>+ Nova Camada</button>
             

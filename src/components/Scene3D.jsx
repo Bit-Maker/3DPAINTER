@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -26,207 +26,33 @@ const Scene3D = ({
   const requestRef = useRef(null);
   const texturesRef = useRef({});
 
-  // 1. SCENE  SETUP 
-  useEffect(() => {
-    while (mountRef.current.firstChild) mountRef.current.removeChild(mountRef.current.firstChild);
-
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x222222); // background color
-    sceneRef.current = scene;
-
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 4); 
-    cameraRef.current = camera;
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    mountRef.current.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controlsRef.current = controls;
-
-    // LLights Setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-    
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    dirLight.position.set(5, 10, 7);
-    scene.add(dirLight);
-
-    const backLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    backLight.position.set(-5, 5, -10);
-    scene.add(backLight);
-
-    // Default Material
-    materialRef.current = new THREE.MeshStandardMaterial({ 
-        color: 0xaaaaaa, // gray
-        roughness: 0.5,
-        metalness: 0.0,
-        side: THREE.DoubleSide // render both sides
+  const updateUVOverlay = (sceneObject) => {
+    if (!onUVsExtracted) return;
+    const allLines = [];
+    sceneObject.traverse((child) => {
+      if (child.isMesh && child.geometry) {
+        const meshLines = extractUVLines(child.geometry);
+        allLines.push(...meshLines);
+      }
     });
-
-    const animate = () => {
-      requestRef.current = requestAnimationFrame(animate);
-      if (controlsRef.current) controlsRef.current.update();
-      if (rendererRef.current && sceneRef.current && cameraRef.current) {
-        rendererRef.current.render(sceneRef.current, cameraRef.current);
-      }
-    };
-    animate();
-
-    const handleResize = () => {
-      if (cameraRef.current && rendererRef.current) {
-        cameraRef.current.aspect = window.innerWidth / window.innerHeight;
-        cameraRef.current.updateProjectionMatrix();
-        rendererRef.current.setSize(window.innerWidth, window.innerHeight);
-      }
-    };
-    window.addEventListener("resize", handleResize);
-
-    // Load a default cube if no model is uploaded
-    if (!uploadedModel) {
-        loadDefaultCube();
-    }
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(requestRef.current);
-      if (mountRef.current && renderer.domElement) mountRef.current.removeChild(renderer.domElement);
-      renderer.dispose();
-    };
-  }, []); 
-
-  // 2. TEXTURE COMPOSITION UPDATE
-  useEffect(() => {
-    if (!finalComposition || !rendererRef.current || !materialRef.current) return;
-
-    const albedoTex = new THREE.CanvasTexture(finalComposition.albedo.canvas);
-    albedoTex.colorSpace = THREE.SRGBColorSpace;
-    const roughnessTex = new THREE.CanvasTexture(finalComposition.roughness.canvas);
-    roughnessTex.colorSpace = THREE.NoColorSpace;
-    const metalnessTex = new THREE.CanvasTexture(finalComposition.metallic.canvas);
-    metalnessTex.colorSpace = THREE.NoColorSpace;
-    const normalTex = new THREE.CanvasTexture(finalComposition.normal.canvas);
-    normalTex.colorSpace = THREE.NoColorSpace;
-
-    texturesRef.current = { albedo: albedoTex, roughness: roughnessTex, metallic: metalnessTex, normal: normalTex };
-
-    // material update
-    materialRef.current.map = albedoTex;
-    materialRef.current.roughnessMap = roughnessTex;
-    materialRef.current.metalnessMap = metalnessTex;
-    materialRef.current.normalMap = normalTex;
-    
-    // Configurações finais
-    materialRef.current.color.setHex(0xffffff); // Tira a cor cinza base
-    materialRef.current.roughness = 1.0;
-    materialRef.current.metalness = 1.0;
-    materialRef.current.transparent = true; // Agora pode ser transparente
-    materialRef.current.needsUpdate = true;
-
-  }, [finalComposition]);
-
-  // 3. visual texture update
-  useEffect(() => {
-    if (triggerTextureUpdate > 0 && finalComposition) {
-        Object.keys(texturesRef.current).forEach(channel => {
-            if (texturesRef.current[channel]) texturesRef.current[channel].needsUpdate = true;
-        });
-    }
-  }, [triggerTextureUpdate, finalComposition]);
+    onUVsExtracted(allLines);
+  };
 
   const fitCameraToObject = (object) => {
       if (!cameraRef.current || !controlsRef.current) return;
-
       const box = new THREE.Box3().setFromObject(object);
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
-
       const maxDim = Math.max(size.x, size.y, size.z);
-      
-      // Conversão Graus -> Radianos
       const fov = cameraRef.current.fov * (Math.PI / 180);
-      
       let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-      
-      cameraZ *= 1.5; // Fator de zoom para dar um respiro
-
-      // Camera looking to the center
+      cameraZ *= 1.5; 
       const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(cameraRef.current.quaternion);
       cameraRef.current.position.copy(center).add(direction.multiplyScalar(cameraZ));
-      
       controlsRef.current.target.copy(center);
       controlsRef.current.update();
   };
 
-  const loadDefaultCube = () => {
-    if (!sceneRef.current) return;
-    if (modelRef.current) sceneRef.current.remove(modelRef.current);
-
-    const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-    const mesh = new THREE.Mesh(geometry, materialRef.current);
-    mesh.name = "Cube";
-    
-    const fallbackGeo = applyCubeUV(mesh.geometry);
-    mesh.geometry = fallbackGeo;
-
-    sceneRef.current.add(mesh);
-    modelRef.current = mesh;
-    
-    updateUVOverlay(mesh);
-  };
-
-  // Model Importation
-  useEffect(() => {
-    if (!sceneRef.current || !uploadedModel) return;
-
-    const loaderMap = {
-      glb: new GLTFLoader(),
-      gltf: new GLTFLoader(),
-      obj: new OBJLoader(),
-      fbx: new FBXLoader(),
-    };
-    const extension = uploadedModel.name.split(".").pop().toLowerCase();
-    const loader = loaderMap[extension];
-    const url = URL.createObjectURL(uploadedModel);
-
-    if (loader) {
-      loader.load(url, (object) => {
-        const loadedScene = object.scene || object;
-        
-        if (modelRef.current) sceneRef.current.remove(modelRef.current);
-        modelRef.current = loadedScene;
-
-        const box = new THREE.Box3().setFromObject(loadedScene);
-        const center = box.getCenter(new THREE.Vector3());
-        loadedScene.position.sub(center);
-
-        const size = box.getSize(new THREE.Vector3());
-        const maxAxis = Math.max(size.x, size.y, size.z);
-        const scale = 2.0 / maxAxis;
-        loadedScene.scale.set(scale, scale, scale);
-
-        loadedScene.traverse((child) => {
-          if (child.isMesh) {
-              child.material = materialRef.current;
-              child.castShadow = true;
-              child.receiveShadow = true;
-          }
-        });
-
-        sceneRef.current.add(loadedScene);
-        fitCameraToObject(loadedScene);
-      });
-    }
-  }, [uploadedModel]);
-
-  // --- Suport Functions ---
   function applyCubeUV(geometry) {
     let geo = geometry;
     if (geo.index) { geo = geo.toNonIndexed(); geometry.dispose(); }
@@ -250,7 +76,149 @@ const Scene3D = ({
     return geo;
   }
 
-  // AUTO UV (XAtlas)
+  const loadDefaultCube = () => {
+    if (!sceneRef.current) return;
+    if (modelRef.current) sceneRef.current.remove(modelRef.current);
+    const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+    const mesh = new THREE.Mesh(geometry, materialRef.current);
+    mesh.name = "Cube";
+    const fallbackGeo = applyCubeUV(mesh.geometry);
+    mesh.geometry = fallbackGeo;
+    sceneRef.current.add(mesh);
+    modelRef.current = mesh;
+    updateUVOverlay(mesh);
+  };
+
+  useEffect(() => {
+    const mountNode = mountRef.current;
+    while (mountNode.firstChild) mountNode.removeChild(mountNode.firstChild);
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x222222);
+    sceneRef.current = scene;
+
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 0, 4); 
+    cameraRef.current = camera;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    mountNode.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controlsRef.current = controls;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    backLight.position.set(-5, 5, -10);
+    scene.add(backLight);
+
+    materialRef.current = new THREE.MeshStandardMaterial({ 
+        color: 0xaaaaaa, roughness: 0.5, metalness: 0.0, side: THREE.DoubleSide 
+    });
+
+    const animate = () => {
+      requestRef.current = requestAnimationFrame(animate);
+      if (controlsRef.current) controlsRef.current.update();
+      if (rendererRef.current && sceneRef.current && cameraRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
+    };
+    animate();
+
+    const handleResize = () => {
+      if (cameraRef.current && rendererRef.current) {
+        cameraRef.current.aspect = window.innerWidth / window.innerHeight;
+        cameraRef.current.updateProjectionMatrix();
+        rendererRef.current.setSize(window.innerWidth, window.innerHeight);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+
+    if (!uploadedModel) {
+        loadDefaultCube();
+    }
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(requestRef.current);
+      if (mountNode && renderer.domElement) mountNode.removeChild(renderer.domElement);
+      renderer.dispose();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
+
+  useEffect(() => {
+    if (!finalComposition || !rendererRef.current || !materialRef.current) return;
+    const albedoTex = new THREE.CanvasTexture(finalComposition.albedo.canvas);
+    albedoTex.colorSpace = THREE.SRGBColorSpace;
+    const roughnessTex = new THREE.CanvasTexture(finalComposition.roughness.canvas);
+    roughnessTex.colorSpace = THREE.NoColorSpace;
+    const metalnessTex = new THREE.CanvasTexture(finalComposition.metallic.canvas);
+    metalnessTex.colorSpace = THREE.NoColorSpace;
+    const normalTex = new THREE.CanvasTexture(finalComposition.normal.canvas);
+    normalTex.colorSpace = THREE.NoColorSpace;
+    texturesRef.current = { albedo: albedoTex, roughness: roughnessTex, metallic: metalnessTex, normal: normalTex };
+    materialRef.current.map = albedoTex;
+    materialRef.current.roughnessMap = roughnessTex;
+    materialRef.current.metalnessMap = metalnessTex;
+    materialRef.current.normalMap = normalTex;
+    materialRef.current.color.setHex(0xffffff);
+    materialRef.current.roughness = 1.0;
+    materialRef.current.metalness = 1.0;
+    materialRef.current.transparent = true;
+    materialRef.current.needsUpdate = true;
+  }, [finalComposition]);
+
+  useEffect(() => {
+    if (triggerTextureUpdate > 0 && finalComposition) {
+        Object.keys(texturesRef.current).forEach(channel => {
+            if (texturesRef.current[channel]) texturesRef.current[channel].needsUpdate = true;
+        });
+    }
+  }, [triggerTextureUpdate, finalComposition]);
+
+  useEffect(() => {
+    if (!sceneRef.current || !uploadedModel) return;
+    const loaderMap = { glb: new GLTFLoader(), gltf: new GLTFLoader(), obj: new OBJLoader(), fbx: new FBXLoader() };
+    const extension = uploadedModel.name.split(".").pop().toLowerCase();
+    const loader = loaderMap[extension];
+    const url = URL.createObjectURL(uploadedModel);
+    if (loader) {
+      loader.load(url, (object) => {
+        const loadedScene = object.scene || object;
+        if (modelRef.current) sceneRef.current.remove(modelRef.current);
+        modelRef.current = loadedScene;
+        const box = new THREE.Box3().setFromObject(loadedScene);
+        const center = box.getCenter(new THREE.Vector3());
+        loadedScene.position.sub(center);
+        const size = box.getSize(new THREE.Vector3());
+        const maxAxis = Math.max(size.x, size.y, size.z);
+        const scale = 2.0 / maxAxis;
+        loadedScene.scale.set(scale, scale, scale);
+        loadedScene.traverse((child) => {
+          if (child.isMesh) {
+              child.material = materialRef.current;
+              child.castShadow = true;
+              child.receiveShadow = true;
+          }
+        });
+        sceneRef.current.add(loadedScene);
+        fitCameraToObject(loadedScene);
+      });
+    }
+  }, [uploadedModel]);
+
   useEffect(() => {
     const runAutoUV = async () => {
       if (triggerAutoUV > 0 && modelRef.current) {
@@ -273,9 +241,9 @@ const Scene3D = ({
       }
     };
     runAutoUV();
-  }, [triggerAutoUV]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerAutoUV]); 
 
-  // PAINT LOGIC
   const paint = (e) => {
     if (!modelRef.current || !isPaintMode || !activeLayerId) return;
     const targetLayer = layers.find(l => l.id === activeLayerId);
@@ -326,17 +294,7 @@ const Scene3D = ({
       window.removeEventListener("pointerup", stopPaint);
       if (onPaintEnd) onPaintEnd();
   };
-  const updateUVOverlay = (sceneObject) => {
-    if (!onUVsExtracted) return;
-    const allLines = [];
-    sceneObject.traverse((child) => {
-      if (child.isMesh && child.geometry) {
-        const meshLines = extractUVLines(child.geometry);
-        allLines.push(...meshLines);
-      }
-    });
-    onUVsExtracted(allLines);
-  };
+
   useEffect(() => { if (controlsRef.current) controlsRef.current.enabled = !isPaintMode; }, [isPaintMode]);
 
   useEffect(() => {
