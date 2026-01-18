@@ -1,6 +1,4 @@
 // src/utils/uvHelper.js
-import * as THREE from 'three';
-
 export const extractUVLines = (geometry) => {
     const lines = []; // Vai guardar pares de coordenadas: [x1, y1, x2, y2]
     
