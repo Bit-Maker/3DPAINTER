@@ -9,7 +9,9 @@ const Toolbar = ({
   brushOpacity,
   setBrushOpacity,
   isEraser,
+ isBucketMode,
   setIsEraser,
+  setIsBucketMode,
   setBrushTexture,
   handleClear,
   handleUndo,
@@ -72,6 +74,16 @@ const Toolbar = ({
             }}
           >
             {isEraser ? "🧽 Borracha ATIVA" : "🖌️ Pincel Normal"}
+          </button>
+          <button
+            onClick={() => setIsBucketMode(!isBucketMode)}
+            style={{
+              background: isBucketMode ? "#ffeb3b" : "#444",
+              color: isBucketMode ? "#000" : "#fff",
+              marginBottom: "10px",
+            }}
+          >
+            {isBucketMode ? "🎨 Balde de tinta ATIVO" : "🖌️ Balde de tinta DESATIVO"}
           </button>
 
           {!isEraser && (

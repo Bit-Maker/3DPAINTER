@@ -2,9 +2,9 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
-import { performPaint } from "../utils/paintHelper";
+import { performPaint, performBucketFill } from "../utils/paintHelper";
 import { extractUVLines } from "../utils/uvHelper";
-import { loadTemplateToCanvas } from "../utils/canvasHelpers";
+import { createNewCanvas, loadTemplateToCanvas } from "../utils/canvasHelpers";
 const Scene3D = ({
   brushColor,
   brushSize,
@@ -20,6 +20,7 @@ const Scene3D = ({
   onDownloadTexture,
   faceLockMode = false,
   triggerTextureUpdate,
+  isBucketMode,
 }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -46,9 +47,16 @@ const Scene3D = ({
 
   const applyTexturesToModel = () => {
     if (!modelRef.current || !finalComposition) return;
+    const shirtCtx = finalComposition.shirt?.ctx;
+    const pantsCtx = finalComposition.pants?.ctx;
+    const finalShirtCanvas = createNewCanvas("rgb(255, 219, 141)", 585, 559);
+    finalShirtCanvas.ctx.drawImage(shirtCtx ? shirtCtx.canvas : finalShirtCanvas.canvas, 0, 0);
+    const finalPantsCanvas = createNewCanvas("rgb(255, 219, 141)", 585, 559);
+    finalPantsCanvas.ctx.drawImage(pantsCtx ? pantsCtx.canvas : finalPantsCanvas.canvas, 0, 0);
 
-    const shirtTexture = new THREE.CanvasTexture(finalComposition.shirt.canvas);
-    const pantsTexture = new THREE.CanvasTexture(finalComposition.pants.canvas);
+    const shirtTexture = new THREE.CanvasTexture(finalShirtCanvas.canvas);
+    const pantsTexture = new THREE.CanvasTexture(finalPantsCanvas.canvas);
+    
 
     [shirtTexture, pantsTexture].forEach((tex) => {
       tex.magFilter = THREE.NearestFilter;
@@ -71,10 +79,11 @@ const Scene3D = ({
         } else {
           child.material.map = shirtTexture;
         }
-
+        child.material.side = THREE.DoubleSide; // Renderiza os dois lados da face
         child.material.transparent = true;
-        child.material.alphaTest = 0.5;
+        child.material.alphaTest = 0.05;
         child.material.needsUpdate = true;
+        child.material.map.needsUpdate = true; // ISSO É VITAL
       }
     });
   };
@@ -303,7 +312,6 @@ const Scene3D = ({
     if (intersects.length > 0 && intersects[0].uv) {
       const intersect = intersects[0];
       const meshName = intersect.object.name.toLowerCase();
-
       let targetChannel = "shirt";
       if (meshName.includes("leg")) {
         targetChannel = "pants";
@@ -313,7 +321,6 @@ const Scene3D = ({
       const channelData = targetLayer.channels[targetChannel];
       if (!channelData) return;
       const layerCtx = channelData.ctx;
-
       const CANVAS_W = 585;
       const CANVAS_H = 559;
 
@@ -337,22 +344,33 @@ const Scene3D = ({
         layerCtx.clip();
       }
 
-      const hit = intersects[0];
-      const distance = hit.distance;
-      const distanceFactor = distance * 0.3;
+      if (isBucketMode) {
+        performBucketFill(
+          layerCtx,
+          intersect.face, 
+          intersect.object.geometry,
+          brushColor,
+          brushOpacity,
+        );
+      } else {
+        const hit = intersects[0];
+        const distance = hit.distance;
+        const distanceFactor = distance * 0.3;
 
-      // 5. Pintura
-      performPaint(
-        layerCtx,
-        x,
-        y,
-        brushSize * distanceFactor,
-        brushColor,
-        brushOpacity,
-        isEraser,
-        brushTexture,
-      );
-
+        performPaint(
+          layerCtx,
+          x,
+          y,
+          brushSize * distanceFactor,
+          brushColor,
+          brushOpacity,
+          isEraser,
+          brushTexture,
+        );
+      }
+      if (intersect.object.material.map) {
+        intersect.object.material.map.needsUpdate = true;
+      }
       if (faceLockMode) layerCtx.restore();
     }
   };
@@ -400,7 +418,7 @@ const Scene3D = ({
         position: "fixed",
         top: 0,
         left: 0,
-        cursor: "crosshair",
+        cursor: "none",
         touchAction: "none", // Previne scroll ao pintar no mobile
       }}
     />

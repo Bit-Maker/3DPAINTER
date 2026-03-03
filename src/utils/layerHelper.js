@@ -13,26 +13,19 @@ export const createLayer = (id, name = "Nova Camada") => {
   };
 };
 
-export const composeLayers = (layers, destinationChannels, templates) => {
-  const types = ["shirt", "pants"];
-
-  types.forEach((type) => {
-    const destChannel = destinationChannels[type];
-    if (!destChannel || !destChannel.ctx) return;
-    const ctx = destChannel.ctx;
-
-    ctx.clearRect(0, 0, 585, 559);
-
-    if (templates && templates[type]) {
-      ctx.drawImage(templates[type], 0, 0, 585, 559);
-    }
-
-    layers.forEach((layer) => {
-      if (layer.visible && layer.channels[type]) {
-        ctx.globalAlpha = layer.opacity;
-        ctx.drawImage(layer.channels[type].canvas, 0, 0);
-      }
+export const composeLayers = (layers, finalComposition) => {
+    ['shirt', 'pants'].forEach(type => {
+        const finalCtx = finalComposition[type].canvas.getContext('2d');
+        
+        // 1. Limpa o canvas final (fica transparente)
+        finalCtx.clearRect(0, 0, 585, 559);
+        
+        // 2. Desenha cada camada por cima
+        layers.forEach(layer => {
+            if (layer.visible) {
+                finalCtx.globalAlpha = layer.opacity;
+                finalCtx.drawImage(layer.channels[type].canvas, 0, 0);
+            }
+        });
     });
-    ctx.globalAlpha = 1.0;
-  });
 };
