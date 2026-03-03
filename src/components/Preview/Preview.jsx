@@ -1,17 +1,21 @@
-import React, { useEffect, useState, useRef } from 'react';
-import styles from './Preview.module.scss';
+import React, { useEffect, useState, useRef } from "react";
+import styles from "./Preview.module.scss";
 
-const Preview = ({ finalComposition, triggerTextureUpdate, setTriggerTextureUpdate }) => {
+const Preview = ({
+  finalComposition,
+  triggerTextureUpdate,
+  setTriggerTextureUpdate,
+}) => {
   const [images, setImages] = useState({ shirt: null, pants: null });
-  
+
   const fileInputRef = useRef(null);
-  const activeType = useRef('shirt');
+  const activeType = useRef("shirt");
 
   useEffect(() => {
     if (finalComposition && finalComposition.shirt && finalComposition.pants) {
       setImages({
         shirt: finalComposition.shirt.canvas.toDataURL(),
-        pants: finalComposition.pants.canvas.toDataURL()
+        pants: finalComposition.pants.canvas.toDataURL(),
       });
     }
   }, [finalComposition, triggerTextureUpdate]);
@@ -48,22 +52,24 @@ const Preview = ({ finalComposition, triggerTextureUpdate, setTriggerTextureUpda
       const img = new Image();
       img.onload = () => {
         if (img.width !== 585 || img.height !== 559) {
-          alert(`Erro: A imagem deve ter exatamente 585x559 pixels.\nDetectado: ${img.width}x${img.height}`);
+          alert(
+            `Erro: A imagem deve ter exatamente 585x559 pixels.\nDetectado: ${img.width}x${img.height}`,
+          );
           return;
         }
 
         const targetCanvas = finalComposition[activeType.current].canvas;
-        const ctx = targetCanvas.getContext('2d');
-        
+        const ctx = targetCanvas.getContext("2d");
+
         ctx.clearRect(0, 0, 585, 559);
         ctx.drawImage(img, 0, 0);
 
-        setTriggerTextureUpdate(prev => prev + 1);
+        setTriggerTextureUpdate((prev) => prev + 1);
       };
       img.src = event.target.result;
     };
     reader.readAsDataURL(file);
-    e.target.value = ""; 
+    e.target.value = "";
   };
 
   if (!images.shirt || !images.pants) {
@@ -78,10 +84,10 @@ const Preview = ({ finalComposition, triggerTextureUpdate, setTriggerTextureUpda
     <div className={styles.Preview}>
       <h3>ROBLOX CLASSIC</h3>
 
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        style={{ display: 'none' }} 
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: "none" }}
         accept="image/png, image/jpeg"
         onChange={handleFileChange}
       />
@@ -90,14 +96,20 @@ const Preview = ({ finalComposition, triggerTextureUpdate, setTriggerTextureUpda
         <div className={styles.previewBox}>
           <span className={styles.label}>SHIRT TEMPLATE</span>
           <div className={styles.imageWrapper}>
-            <img src={images.shirt} alt="Shirt Preview" className={styles.previewImage} />
+            <img
+              src={images.shirt}
+              alt="Shirt Preview"
+              className={styles.previewImage}
+            />
             <div className={styles.overlayActions}>
-               <button onClick={() => handleImportClick('shirt')}>Importar</button>
+              <button onClick={() => handleImportClick("shirt")}>
+                Importar
+              </button>
             </div>
           </div>
-          <button 
-            className={styles.downloadBtn} 
-            onClick={() => downloadTexture('shirt')}
+          <button
+            className={styles.downloadBtn}
+            onClick={() => downloadTexture("shirt")}
           >
             Baixar Camisa
           </button>
@@ -106,14 +118,20 @@ const Preview = ({ finalComposition, triggerTextureUpdate, setTriggerTextureUpda
         <div className={styles.previewBox}>
           <span className={styles.label}>PANTS TEMPLATE</span>
           <div className={styles.imageWrapper}>
-            <img src={images.pants} alt="Pants Preview" className={styles.previewImage} />
+            <img
+              src={images.pants}
+              alt="Pants Preview"
+              className={styles.previewImage}
+            />
             <div className={styles.overlayActions}>
-               <button onClick={() => handleImportClick('pants')}>Importar</button>
+              <button onClick={() => handleImportClick("pants")}>
+                Importar
+              </button>
             </div>
           </div>
-          <button 
-            className={styles.downloadBtn} 
-            onClick={() => downloadTexture('pants')}
+          <button
+            className={styles.downloadBtn}
+            onClick={() => downloadTexture("pants")}
           >
             Baixar Calça
           </button>

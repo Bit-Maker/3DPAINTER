@@ -25,9 +25,10 @@ const initXAtlas = async () => {
 
   // 3. Carrega o WASM
   await unwrapper.loadLibrary(
-    (mode, progress) => console.log(`XAtlas ${mode}: ${Math.round(progress * 100)}%`),
+    (mode, progress) =>
+      console.log(`XAtlas ${mode}: ${Math.round(progress * 100)}%`),
     "https://cdn.jsdelivr.net/npm/xatlasjs@0.2.0/dist/xatlas.wasm",
-    "https://cdn.jsdelivr.net/npm/xatlasjs@0.2.0/dist/xatlas.js"
+    "https://cdn.jsdelivr.net/npm/xatlasjs@0.2.0/dist/xatlas.js",
   );
 
   return unwrapper;
@@ -40,17 +41,17 @@ export const generateAtlasUVs = async (mesh) => {
   let geometry = mesh.geometry.clone();
 
   // Limpa UVs antigos
-  geometry.deleteAttribute('uv');
+  geometry.deleteAttribute("uv");
 
   // Garante que existe índice (Index)
   if (!geometry.index) {
-      const positionAttribute = geometry.attributes.position;
-      const count = positionAttribute.count;
-      const indices = [];
-      for (let i = 0; i < count; i++) {
-          indices.push(i);
-      }
-      geometry.setIndex(indices);
+    const positionAttribute = geometry.attributes.position;
+    const count = positionAttribute.count;
+    const indices = [];
+    for (let i = 0; i < count; i++) {
+      indices.push(i);
+    }
+    geometry.setIndex(indices);
   }
 
   // Executa o Pack Atlas
@@ -59,7 +60,7 @@ export const generateAtlasUVs = async (mesh) => {
 
   // Retorna a nova geometria processada
   if (atlas && atlas.geometries && atlas.geometries.length > 0) {
-      return atlas.geometries[0];
+    return atlas.geometries[0];
   }
 
   return geometry;

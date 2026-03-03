@@ -363,7 +363,7 @@ const Scene3D = ({
     paint(e); // Pinta o ponto inicial imediatamente
 
     const onPointerMove = (ev) => {
-      if(ev.buttons !== 1) return; // Verifica se o botão esquerdo ainda está pressionado
+      if (ev.buttons !== 1) return; // Verifica se o botão esquerdo ainda está pressionado
       paint(ev);
       onPaintEnd(); // Salva o histórico ou compõe as camadas
     };
