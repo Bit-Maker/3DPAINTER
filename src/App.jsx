@@ -11,11 +11,10 @@ import Preview from "./components/Preview/Preview";
 import { loadTemplateToCanvas } from "./utils/canvasHelpers";
 function App() {
   const [brushColor, setBrushColor] = useState("#000");
-  const [brushSize, setBrushSize] = useState(20);
+  const [brushSize, setBrushSize] = useState(5);
   const [brushOpacity, setBrushOpacity] = useState(1.0);
   const [isEraser, setIsEraser] = useState(false);
   const [brushTexture, setBrushTexture] = useState(null);
-  const [isPaintMode, setIsPaintMode] = useState(false);
   const [uploadedModel, setUploadedModel] = useState(null);
   const [triggerAutoUV, setTriggerAutoUV] = useState(0);
   const [activeChannel, setActiveChannel] = useState("albedo");
@@ -70,10 +69,7 @@ useEffect(() => {
 
 
       event.preventDefault();
-      if(event.key === "Tab") {
-        setIsPaintMode((prev) => !prev);
-      }
-    else if(event.key === "+") {
+       if(event.key === "+") {
         setBrushSize((size) => Math.min(size + 5, 500));
     }
     else if(event.key === "-") {
@@ -89,9 +85,7 @@ useEffect(() => {
         return
       }
 
-      if(event.key === "Tab") {
-        event.preventDefault();
-      }
+    
 
     };
 
@@ -105,7 +99,7 @@ useEffect(() => {
 
   return (
     <div className="App">
-      <BrushCursor size={brushSize} visible={isPaintMode} />
+      <BrushCursor size={brushSize} visible={true} />
 
       <Toolbar
         activeChannel={activeChannel}
@@ -120,8 +114,6 @@ useEffect(() => {
         setIsEraser={setIsEraser}
         setUploadedModel={setUploadedModel}
         setBrushTexture={setBrushTexture}
-        isPaintMode={isPaintMode}
-        toggleMode={setIsPaintMode}
         handleAutoUV={() => setTriggerAutoUV((p) => p + 1)}
       />
 {/*
@@ -146,7 +138,6 @@ useEffect(() => {
         brushSize={brushSize}
         brushOpacity={brushOpacity}
         isEraser={isEraser}
-        isPaintMode={isPaintMode}
         uploadedModel={uploadedModel}
         brushTexture={brushTexture}
         triggerAutoUV={triggerAutoUV}

@@ -10,7 +10,6 @@ const Scene3D = ({
   brushSize,
   brushOpacity,
   isEraser,
-  isPaintMode,
   uploadedModel,
   brushTexture,
   finalComposition,
@@ -32,21 +31,7 @@ const Scene3D = ({
   const raycasterRef = useRef(new THREE.Raycaster());
   const mouseRef = useRef(new THREE.Vector2());
   const requestRef = useRef(null);
-  const textureRef = useRef(null); // Textura única (Albedo)
-
-  // Usamos uma Ref para o isPaintMode para que o loop de animação possa ler o valor atualizado
-  const isPaintModeRef = useRef(isPaintMode);
-
-
-
-  // Sincroniza a prop com a ref e desativa a rotação da câmera ao pintar
-  useEffect(() => {
-    isPaintModeRef.current = isPaintMode;
-    if (controlsRef.current) {
-      controlsRef.current.enabled = !isPaintMode;
-    }
-  }, [isPaintMode]);
-
+  const textureRef = useRef(null);
   const updateUVOverlay = (sceneObject) => {
     if (!onUVsExtracted) return;
     const allLines = [];
@@ -60,50 +45,44 @@ const Scene3D = ({
   };
 
   const applyTexturesToModel = () => {
-  if (!modelRef.current || !finalComposition) return;
+    if (!modelRef.current || !finalComposition) return;
 
-  const shirtTexture = new THREE.CanvasTexture(finalComposition.shirt.canvas);
-  const pantsTexture = new THREE.CanvasTexture(finalComposition.pants.canvas);
+    const shirtTexture = new THREE.CanvasTexture(finalComposition.shirt.canvas);
+    const pantsTexture = new THREE.CanvasTexture(finalComposition.pants.canvas);
 
-  [shirtTexture, pantsTexture].forEach(tex => {
-    tex.magFilter = THREE.NearestFilter;
-    tex.minFilter = THREE.NearestFilter;
-    // Tente alternar isso para true se a textura parecer de ponta-cabeça
-    tex.flipY = true; 
-    tex.needsUpdate = true;
-  });
+    [shirtTexture, pantsTexture].forEach((tex) => {
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      tex.flipY = true;
+      tex.needsUpdate = true;
+    });
 
-  modelRef.current.traverse((child) => {
-    if (child.isMesh) {
-      const name = child.name.toLowerCase();
-      
-      // IMPORTANTE: Clonar o material evita que a textura da perna 
-      // sobrescreva a do braço caso eles compartilhem o mesmo material original.
-      if (child.material) {
-        child.material = child.material.clone();
+    modelRef.current.traverse((child) => {
+      if (child.isMesh) {
+        const name = child.name.toLowerCase();
+        if (child.material) {
+          child.material = child.material.clone();
+        }
+
+        const isPants = name.includes("leg") || name.includes("foot");
+
+        if (isPants) {
+          child.material.map = pantsTexture;
+        } else {
+          child.material.map = shirtTexture;
+        }
+
+        child.material.transparent = true;
+        child.material.alphaTest = 0.5;
+        child.material.needsUpdate = true;
       }
+    });
+  };
 
-      const isPants = name.includes("leg") || name.includes("foot");
-
-      if (isPants) {
-        child.material.map = pantsTexture;
-      } else {
-        child.material.map = shirtTexture;
-      }
-
-      // Garante que o material aceite transparência (essencial para roupas)
-      child.material.transparent = true;
-      child.material.alphaTest = 0.5;
-      child.material.needsUpdate = true;
-    }
-  });
-};
-
-useEffect(() => {
-    // Sempre que você pintar, esta função será disparada
+  useEffect(() => {
     applyTexturesToModel();
     // eslint-disable-next-line
-}, [triggerTextureUpdate, finalComposition]);
+  }, [triggerTextureUpdate, finalComposition]);
 
   const fitCameraToObject = (object) => {
     if (!cameraRef.current || !controlsRef.current) return;
@@ -150,6 +129,11 @@ useEffect(() => {
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.mouseButtons = {
+      LEFT: null, // Desativa o botão esquerdo para a câmera
+      MIDDLE: THREE.MOUSE.DOLLY,
+      RIGHT: THREE.MOUSE.ROTATE,
+    };
     controlsRef.current = controls;
 
     // Iluminação forte e plana para ver as texturas claramente
@@ -189,7 +173,7 @@ useEffect(() => {
       if (controlsRef.current) controlsRef.current.update();
 
       // ATUALIZAÇÃO 60FPS: Se o modo pintura estiver ativo e a textura existir, força o update
-      if (isPaintModeRef.current && textureRef.current) {
+      if (textureRef.current) {
         textureRef.current.needsUpdate = true;
       }
 
@@ -260,29 +244,34 @@ useEffect(() => {
           const scale = 2.0 / maxAxis;
           object.scale.set(scale, scale, scale);
           setTimeout(() => {
-          object.traverse((child) => {
-            if (child.isMesh && finalComposition && finalComposition.shirt && finalComposition.pants) {
-              const name = child.name.toLowerCase();
+            object.traverse((child) => {
+              if (
+                child.isMesh &&
+                finalComposition &&
+                finalComposition.shirt &&
+                finalComposition.pants
+              ) {
+                const name = child.name.toLowerCase();
 
-              const shirtTex = new THREE.CanvasTexture(
-                finalComposition.shirt.canvas,
-              );
-              const pantsTex = new THREE.CanvasTexture(
-                finalComposition.pants.canvas,
-              );
-              console.log("Aplicando texturas:", name);
-              if (name.includes("leg") || name.includes("foot")) {
-                child.material.map = pantsTex; 
-              } else {
-                child.material.map = shirtTex; 
+                const shirtTex = new THREE.CanvasTexture(
+                  finalComposition.shirt.canvas,
+                );
+                const pantsTex = new THREE.CanvasTexture(
+                  finalComposition.pants.canvas,
+                );
+                console.log("Aplicando texturas:", name);
+                if (name.includes("leg") || name.includes("foot")) {
+                  child.material.map = pantsTex;
+                } else {
+                  child.material.map = shirtTex;
+                }
+
+                child.material.map.magFilter = THREE.NearestFilter;
+                child.material.map.minFilter = THREE.NearestFilter;
+                child.material.needsUpdate = true;
               }
-
-              child.material.map.magFilter = THREE.NearestFilter;
-              child.material.map.minFilter = THREE.NearestFilter;
-              child.material.needsUpdate = true;
-            }
-          });}, 1000); 
-
+            });
+          }, 1000);
 
           modelRef.current = object;
           sceneRef.current.add(object);
@@ -297,7 +286,7 @@ useEffect(() => {
   }, [uploadedModel]);
 
   const paint = (e) => {
-    if (!modelRef.current || !isPaintMode || !activeLayerId) return;
+    if (!modelRef.current || !activeLayerId) return;
 
     const targetLayer = layers.find((l) => l.id === activeLayerId);
     if (!targetLayer || !targetLayer.channels) return;
@@ -313,7 +302,7 @@ useEffect(() => {
 
     if (intersects.length > 0 && intersects[0].uv) {
       const intersect = intersects[0];
-      const meshName = intersect.object.name.toLowerCase()
+      const meshName = intersect.object.name.toLowerCase();
 
       let targetChannel = "shirt";
       if (meshName.includes("leg")) {
@@ -348,16 +337,16 @@ useEffect(() => {
         layerCtx.clip();
       }
 
-      const hit = intersects[0]
-      const distance = hit.distance
-      const distanceFactor = distance * 0.3
+      const hit = intersects[0];
+      const distance = hit.distance;
+      const distanceFactor = distance * 0.3;
 
       // 5. Pintura
       performPaint(
         layerCtx,
         x,
         y,
-        brushSize*distanceFactor,
+        brushSize * distanceFactor,
         brushColor,
         brushOpacity,
         isEraser,
@@ -370,11 +359,11 @@ useEffect(() => {
 
   // 5. Gerenciamento de Eventos de Mouse/Touch
   const handlePointerDown = (e) => {
-    if (!isPaintMode) return;
-
+    if (e.button !== 0) return;
     paint(e); // Pinta o ponto inicial imediatamente
 
     const onPointerMove = (ev) => {
+      if(ev.buttons !== 1) return; // Verifica se o botão esquerdo ainda está pressionado
       paint(ev);
       onPaintEnd(); // Salva o histórico ou compõe as camadas
     };
@@ -411,7 +400,7 @@ useEffect(() => {
         position: "fixed",
         top: 0,
         left: 0,
-        cursor: isPaintMode ? "crosshair" : "default",
+        cursor: "crosshair",
         touchAction: "none", // Previne scroll ao pintar no mobile
       }}
     />

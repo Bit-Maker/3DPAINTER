@@ -9,10 +9,10 @@ const Toolbar = ({
     setUploadedModel,setBrushTexture,
     handleClear,handleDownload,
     handleAutoUV, handleUndo,                    
-    handleRedo, isPaintMode,
+    handleRedo,
     toggleMode,showWireframe,
     faceLockMode,setFaceLockMode,
-    setShowWireframe,setIsPaintMode
+    setShowWireframe
 }) => {
     
     const handleImageUpload = (e) => {
@@ -26,13 +26,6 @@ const Toolbar = ({
 
     return (
         <>
-            <div className="mode-switcher">
-                <button className={!isPaintMode ? 'active' : ''} onClick={() => toggleMode(false)}>📷 Câmera [TAB]</button>
-                <button className={isPaintMode ? 'active' : ''} onClick={() => toggleMode(true)}>🖌️ Pintura [TAB]</button>
-            </div>
-
-            
-
             <div className="ui-panel">
                 <h3>Ferramentas Pro</h3>
 
