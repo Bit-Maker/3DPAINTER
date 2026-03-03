@@ -10,24 +10,17 @@ export const performPaint = (
   brushTexture,
 ) => {
   if (!ctx) return;
-
-  const calibratedSize = size * 582 * 0.0007;
+  const minSize = size*.2
+  const calibratedSize = Math.max(minSize, size * 582 * 0.0007);
   const radius = calibratedSize / 2;
 
   ctx.save();
   ctx.globalAlpha = opacity;
 
  if (isEraser) {
-    ctx.save(); // Protege o estado do contexto
-   /* ctx.globalCompositeOperation = "destination-out";
-    ctx.globalAlpha = 1.0; // Garante que vai apagar totalmente
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.restore();
-    ctx.globalCompositeOperation = "source-over";*/
+    ctx.save(); 
     ctx.clearRect(x - radius, y - radius, calibratedSize, calibratedSize);
-    ctx.fillRect(x - radius, y - radius, calibratedSize, calibratedSize); // Garante que a área fica transparente
+    ctx.fillRect(x - radius, y - radius, calibratedSize, calibratedSize); 
 }
    else {
     ctx.globalCompositeOperation = "source-over";
@@ -55,11 +48,7 @@ export const performPaint = (
   }
   ctx.restore();
 };
-
-/**
- * Pinta um triângulo (face) específico no canvas baseado nas coordenadas UV.
- */
-export const performBucketFill = (ctx, face, geometry, color, opacity) => {
+export const performBucketFill = (ctx, face, geometry, color, opacity,eraser) => {
   if (!ctx || !face || !geometry) return;
 
   // 1. Pegar o atributo de UV da geometria
@@ -81,14 +70,28 @@ export const performBucketFill = (ctx, face, geometry, color, opacity) => {
   ctx.globalCompositeOperation = "source-over";
 
   // 3. Desenhar o triângulo no Canvas
-  ctx.beginPath();
-  ctx.moveTo(uvA.x * CANVAS_W, (1 - uvA.y) * CANVAS_H);
-  ctx.lineTo(uvB.x * CANVAS_W, (1 - uvB.y) * CANVAS_H);
-  ctx.lineTo(uvC.x * CANVAS_W, (1 - uvC.y) * CANVAS_H);
-  ctx.closePath();
-  
-  // 4. Preencher
-  ctx.fill();
+  if(eraser) {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath();
+    ctx.moveTo(uvA.x * CANVAS_W, (1 - uvA.y) * CANVAS_H);
+    ctx.lineTo(uvB.x * CANVAS_W, (1 - uvB.y) * CANVAS_H);
+    ctx.lineTo(uvC.x * CANVAS_W, (1 - uvC.y) * CANVAS_H);
+    ctx.closePath();
+    
+    // 4. Apagar
+    ctx.clear();
 
-  ctx.restore();
+    ctx.restore();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(uvA.x * CANVAS_W, (1 - uvA.y) * CANVAS_H);
+    ctx.lineTo(uvB.x * CANVAS_W, (1 - uvB.y) * CANVAS_H);
+    ctx.lineTo(uvC.x * CANVAS_W, (1 - uvC.y) * CANVAS_H);
+    ctx.closePath();
+    
+    // 4. Preencher
+    ctx.fill();
+
+    ctx.restore();
+  }
 };

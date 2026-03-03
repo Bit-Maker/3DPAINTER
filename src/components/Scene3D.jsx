@@ -354,6 +354,7 @@ const Scene3D = ({
         );
       } else {
         const hit = intersects[0];
+        const pressure = e.pressure || 0.5; // Fallback para dispositivos sem suporte a pressão
         const distance = hit.distance;
         const distanceFactor = distance * 0.3;
 
@@ -361,7 +362,7 @@ const Scene3D = ({
           layerCtx,
           x,
           y,
-          brushSize * distanceFactor,
+          brushSize * distanceFactor * pressure,
           brushColor,
           brushOpacity,
           isEraser,
