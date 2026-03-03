@@ -46,7 +46,6 @@ const TextureEditor = ({
         const ctx = overlayRef.current?.getContext('2d');
         if (!ctx) return;
 
-        // Limpa o overlay
         ctx.clearRect(0, 0, 1024, 1024);
 
         if (showWireframe && uvLines && uvLines.length > 0) {

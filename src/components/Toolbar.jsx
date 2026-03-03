@@ -11,7 +11,8 @@ const Toolbar = ({
     handleAutoUV, handleUndo,                    
     handleRedo, isPaintMode,
     toggleMode,showWireframe,
-    faceLockMode,setFaceLockMode,setShowWireframe 
+    faceLockMode,setFaceLockMode,
+    setShowWireframe,setIsPaintMode
 }) => {
     
     const handleImageUpload = (e) => {
@@ -62,7 +63,7 @@ const Toolbar = ({
                     <div style={{display:'flex', justifyContent:'space-between'}}>
                         <label style={{fontSize:'10px', color:'#888'}}>Tamanho: {brushSize}px</label>
                     </div>
-                    <input type="range" min="1" max="500" value={brushSize} onChange={(e) => setBrushSize(parseInt(e.target.value))} />
+                    <input type="range" min="1" max="100" value={brushSize} onChange={(e) => setBrushSize(parseInt(e.target.value))} />
 
                     <div style={{display:'flex', justifyContent:'space-between', marginTop:'5px'}}>
                         <label style={{fontSize:'10px', color:'#888'}}>Força: {Math.round(brushOpacity * 100)}%</label>
