@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Scene3D from "./components/Scene3D";
 import Toolbar from "./components/Toolbar";
 import BrushCursor from "./components/BrushCursor";
+// eslint-disable-next-line 
 import LayerPanel from "./components/LayerPanel";
 import { createNewCanvas } from "./utils/canvasHelpers";
 import { createLayer, composeLayers } from "./utils/layerHelper";

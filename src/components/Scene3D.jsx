@@ -102,6 +102,7 @@ const Scene3D = ({
 useEffect(() => {
     // Sempre que você pintar, esta função será disparada
     applyTexturesToModel();
+    // eslint-disable-next-line
 }, [triggerTextureUpdate, finalComposition]);
 
   const fitCameraToObject = (object) => {
@@ -215,6 +216,7 @@ useEffect(() => {
         mountNode.removeChild(renderer.domElement);
       }
     };
+    // eslint-disable-next-line
   }, []);
 
   // 2. Atualização da Textura Baseada no Canvas
@@ -291,6 +293,7 @@ useEffect(() => {
         (error) => console.error("Erro ao carregar avatar.obj:", error),
       );
     }
+    // eslint-disable-next-line
   }, [uploadedModel]);
 
   const paint = (e) => {
