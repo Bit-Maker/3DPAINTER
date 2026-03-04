@@ -5,6 +5,7 @@ const Preview = ({
   finalComposition,
   triggerTextureUpdate,
   setTriggerTextureUpdate,
+  setLayers
 }) => {
   const [images, setImages] = useState({ shirt: null, pants: null });
 

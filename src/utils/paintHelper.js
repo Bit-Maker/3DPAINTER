@@ -1,49 +1,51 @@
 const imageCache = {};
-export const performPaint = (
-  ctx,
-  x,
-  y,
-  size,
-  color,
-  opacity,
-  isEraser,
-  brushTexture,
-) => {
+export const performPaint = (ctx, x, y, lastX, lastY, size, color, opacity, isEraser, brushTexture) => {
   if (!ctx) return;
-  const minSize = size*.2
-  const calibratedSize = Math.max(minSize, size * 582 * 0.0007);
-  const radius = calibratedSize / 2;
 
+  const calibratedSize = Math.max(size * 0.2, size * 582 * 0.0007);
+  const distancia = Math.sqrt(Math.pow(x - lastX, 2) + Math.pow(y - lastY, 2));
   ctx.save();
-  ctx.globalAlpha = opacity;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = calibratedSize;
 
- if (isEraser) {
-    ctx.save(); 
-    ctx.clearRect(x - radius, y - radius, calibratedSize, calibratedSize);
-    ctx.fillRect(x - radius, y - radius, calibratedSize, calibratedSize); 
-}
-   else {
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 1;
-    if (brushTexture) {
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, 2 * Math.PI);
-      ctx.clip();
-
-      if (imageCache[brushTexture]?.isLoaded) {
-        ctx.drawImage(
-          imageCache[brushTexture].img,
-          x - radius,
-          y - radius,
-          calibratedSize,
-          calibratedSize,
-        );
-      }
+  // --- CONFIGURAÇÃO DO SHADOWBLUR (MACIEZ) ---
+  // O valor do blur geralmente fica entre 20% e 50% do tamanho do pincel
+  ctx.shadowBlur = calibratedSize * 0.3; 
+  ctx.shadowColor = isEraser ? "black" : color; // Cor da "névoa" do pincel
+  
+  if (isEraser) {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.strokeStyle = "rgba(0,0,0,1)";
+    ctx.beginPath();
+    if (lastX !== null && lastY !== null) {
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(x, y);
     } else {
+      ctx.arc(x, y, calibratedSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.stroke();
+  } else {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = opacity;
+
+    if (brushTexture && imageCache[brushTexture]?.isLoaded) {
+      // Para texturas, o shadowBlur cria uma aura ao redor da imagem
+      //drawTexturedLine(ctx, lastX, lastY, x, y, calibratedSize, brushTexture);
+    } else {
+      ctx.strokeStyle = color;
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(x, y, radius, 0, 2 * Math.PI);
-      ctx.fill();
+      
+      if (lastX !== null && lastY !== null && distancia < 70) {
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      } else {
+        ctx.arc(x, y, calibratedSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
   ctx.restore();

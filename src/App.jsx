@@ -3,7 +3,7 @@ import Scene3D from "./components/Scene3D";
 import Toolbar from "./components/Toolbar";
 import BrushCursor from "./components/BrushCursor";
 // eslint-disable-next-line 
-import LayerPanel from "./components/LayerPanel";
+import LayerPanel from "./components/LayerPanel/LayerPanel";
 import { createNewCanvas } from "./utils/canvasHelpers";
 import { createLayer, composeLayers } from "./utils/layerHelper";
 import "./App.css";
@@ -24,6 +24,50 @@ function App() {
   const [triggerTextureUpdate, setTriggerTextureUpdate] = useState(0);
 
   const finalCompositionRef = useRef(null);
+
+  const handleClear = () => {
+    if (finalCompositionRef.current) {
+      finalCompositionRef.current.shirt.ctx.clearRect(0, 0, 585, 559);
+      finalCompositionRef.current.pants.ctx.clearRect(0, 0, 585, 559);
+      setTriggerTextureUpdate((prev) => prev + 1);
+    }
+  }
+
+  const updateLayerOpacity = (id, opacity) => {
+    const newLayers = layers.map((l) =>
+      l.id === id ? { ...l, opacity: opacity } : l,
+    );
+    setLayers(newLayers);
+  }
+
+
+  const handleAddLayer = () => {
+    const newId = Date.now(); // Removido as chaves {} de destruturação que causavam erro
+
+    const createChannel = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 585;
+      canvas.height = 559;
+      return {
+        canvas,
+        ctx: canvas.getContext("2d")
+      };
+    };
+
+    const newLayer = {
+      id: newId,
+      name: `Camada ${layers.length + 1}`,
+      visible: true,
+      opacity: 1,
+      channels: {
+        shirt: createChannel(),
+        pants: createChannel()
+      }
+    };
+
+    setLayers((prev) => [...prev, newLayer]);
+    setActiveLayerId(newId);
+  };
 
 useEffect(() => {
     if (!finalCompositionRef.current) {
@@ -113,23 +157,26 @@ useEffect(() => {
         setBrushOpacity={setBrushOpacity}
         isEraser={isEraser}
         isBucketMode={isBucketMode}
+        handleClear={handleClear}
         setIsBucketMode={setIsBucketMode}
         setIsEraser={setIsEraser}
         setUploadedModel={setUploadedModel}
         setBrushTexture={setBrushTexture}
         handleAutoUV={() => setTriggerAutoUV((p) => p + 1)}
       />
-{/*
+
 <LayerPanel
         layers={layers}
         activeLayerId={activeLayerId}
         setLayers={setLayers}
         setActiveLayerId={setActiveLayerId}
         onUpdate={updateComposition}
+        addLayer={handleAddLayer}
+        updateOpacity={updateLayerOpacity}
         />
         
-        */
-      }
+        
+    
       <Scene3D
         layers={layers}
         activeLayerId={activeLayerId}
@@ -147,7 +194,8 @@ useEffect(() => {
         triggerAutoUV={triggerAutoUV}
         channels={finalCompositionRef.current}
       />
-      <Preview setTriggerTextureUpdate={setTriggerTextureUpdate} triggerTextureUpdate={triggerTextureUpdate}  finalComposition={finalCompositionRef.current}/>
+      <Preview setLayers={setLayers} setTriggerTextureUpdate={setTriggerTextureUpdate} triggerTextureUpdate={triggerTextureUpdate}  finalComposition={finalCompositionRef.current}/>
+      <div id="portal-root"></div>
     </div>
   );
 }

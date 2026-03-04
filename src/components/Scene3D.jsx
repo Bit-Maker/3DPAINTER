@@ -33,6 +33,7 @@ const Scene3D = ({
   const mouseRef = useRef(new THREE.Vector2());
   const requestRef = useRef(null);
   const textureRef = useRef(null);
+const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
   const updateUVOverlay = (sceneObject) => {
     if (!onUVsExtracted) return;
     const allLines = [];
@@ -117,7 +118,7 @@ const Scene3D = ({
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x222222);
     sceneRef.current = scene;
-
+    raycasterRef.firstHitOnly = true;
     const camera = new THREE.PerspectiveCamera(
       45,
       window.innerWidth / window.innerHeight,
@@ -150,7 +151,6 @@ const Scene3D = ({
 
     // Material Simples (MeshBasicMaterial = Sem sombras/reflexos, ideal para 2D clássico)
     materialRef.current = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
       side: THREE.DoubleSide,
       transparent: true,
     });
@@ -316,6 +316,9 @@ const Scene3D = ({
       if (meshName.includes("leg")) {
         targetChannel = "pants";
       }
+       const isSameMember = lastPaintTarget.current.objectId === intersect.object.id; 
+      const prevX = isSameMember ? lastPaintTarget.current.x : null;
+      const prevY = isSameMember ? lastPaintTarget.current.y : null;
       console.log(meshName, targetChannel, intersect.uv.y);
 
       const channelData = targetLayer.channels[targetChannel];
@@ -362,12 +365,15 @@ const Scene3D = ({
           layerCtx,
           x,
           y,
+          prevX,
+            prevY,
           brushSize * distanceFactor * pressure,
           brushColor,
           brushOpacity,
           isEraser,
           brushTexture,
         );
+        lastPaintTarget.current = { x, y, objectId: intersect.object.id };
       }
       if (intersect.object.material.map) {
         intersect.object.material.map.needsUpdate = true;
@@ -379,6 +385,7 @@ const Scene3D = ({
   // 5. Gerenciamento de Eventos de Mouse/Touch
   const handlePointerDown = (e) => {
     if (e.button !== 0) return;
+    lastPaintTarget.current = { x: null, y: null, objectId: null };
     paint(e); // Pinta o ponto inicial imediatamente
 
     const onPointerMove = (ev) => {

@@ -1,10 +1,9 @@
 .Preview {
   position: fixed;
   z-index: 10;
-  right: .1vw;
-  top: 0.1vh;
+  right: 1.5vw;
+  top: 1.5vw;
   display: flex;
-  height: 40vh;
   flex-direction: column;
   gap: 1.5rem;
   padding: 1.2rem;
@@ -27,6 +26,17 @@
     padding-bottom: 0.5rem;
     color: #ddd;
   }
+}
+
+.uipanel {
+  position: fixed;
+  z-index: 10;
+  right: 15vw;
+  top: 1.5vw;
+  display: flex;
+  z-index: 11;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .gridContainer {
@@ -54,6 +64,9 @@
     margin: 0;
   }
 }
+.previewLayer {
+  width: 100%;
+}
 
 .imageWrapper {
   position: relative;
@@ -71,6 +84,10 @@
     10px -10px,
     -10px 0px;
   border: 2px solid #555;
+}
+
+.active{
+  border: solid 2px #4caf50;
 }
 
 .previewImage {
