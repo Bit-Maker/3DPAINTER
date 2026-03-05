@@ -15,7 +15,9 @@ const Scene3D = ({
   finalComposition,
   activeLayerId,
   layers,
+  saveHistoryAction,
   onPaintEnd,
+  activeChannel,
   onUVsExtracted,
   onDownloadTexture,
   faceLockMode = false,
@@ -33,6 +35,7 @@ const Scene3D = ({
   const mouseRef = useRef(new THREE.Vector2());
   const requestRef = useRef(null);
   const textureRef = useRef(null);
+  const beforeImageData = useRef(null);
 const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
   const updateUVOverlay = (sceneObject) => {
     if (!onUVsExtracted) return;
@@ -319,8 +322,6 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
        const isSameMember = lastPaintTarget.current.objectId === intersect.object.id; 
       const prevX = isSameMember ? lastPaintTarget.current.x : null;
       const prevY = isSameMember ? lastPaintTarget.current.y : null;
-      console.log(meshName, targetChannel, intersect.uv.y);
-
       const channelData = targetLayer.channels[targetChannel];
       if (!channelData) return;
       const layerCtx = channelData.ctx;
@@ -354,6 +355,7 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
           intersect.object.geometry,
           brushColor,
           brushOpacity,
+          isEraser
         );
       } else {
         const hit = intersects[0];
@@ -387,7 +389,12 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
     if (e.button !== 0) return;
     lastPaintTarget.current = { x: null, y: null, objectId: null };
     paint(e); // Pinta o ponto inicial imediatamente
-
+const activeLayer = layers.find(l => l.id === activeLayerId);
+  if (activeLayer) {
+     const ctx = activeLayer.channels[activeChannel].ctx; // activeChannel é 'shirt' ou 'pants'
+     // Tira a "foto" de como o canvas está antes do risco
+     beforeImageData.current = ctx.getImageData(0, 0, 585, 559);
+  }
     const onPointerMove = (ev) => {
       if (ev.buttons !== 1) return; // Verifica se o botão esquerdo ainda está pressionado
       paint(ev);
@@ -397,6 +404,17 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
     const onPointerUp = () => {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
+      const activeLayer = layers.find(l => l.id === activeLayerId);
+  if (activeLayer && beforeImageData.current) {
+     const ctx = activeLayer.channels[activeChannel].ctx;
+     const afterImageData = ctx.getImageData(0, 0, 585, 559);
+
+     // Envia para o histórico no App.jsx
+     saveHistoryAction(activeLayerId, activeChannel, beforeImageData.current, afterImageData);
+     
+     // Limpa a ref temporária
+     beforeImageData.current = null;
+  }
       onPaintEnd(); // Salva o histórico ou compõe as camadas
     };
 

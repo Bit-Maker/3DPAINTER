@@ -29,3 +29,10 @@ export const composeLayers = (layers, finalComposition) => {
         });
     });
 };
+
+export const clearLayers = (layers) => {
+    layers.forEach(layer => {
+        layer.channels.shirt.ctx.clearRect(0, 0, 585, 559);
+        layer.channels.pants.ctx.clearRect(0, 0, 585, 559);
+    });
+};

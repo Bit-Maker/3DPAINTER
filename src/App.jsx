@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Scene3D from "./components/Scene3D";
 import Toolbar from "./components/Toolbar";
 import BrushCursor from "./components/BrushCursor";
-// eslint-disable-next-line 
 import LayerPanel from "./components/LayerPanel/LayerPanel";
 import { createNewCanvas } from "./utils/canvasHelpers";
-import { createLayer, composeLayers } from "./utils/layerHelper";
+import { createLayer, composeLayers,clearLayers } from "./utils/layerHelper";
 import "./App.css";
 import Preview from "./components/Preview/Preview";
 import { loadTemplateToCanvas } from "./utils/canvasHelpers";
+
+
 function App() {
   const [brushColor, setBrushColor] = useState("#000");
   const [brushSize, setBrushSize] = useState(5);
@@ -18,17 +19,96 @@ function App() {
   const [brushTexture, setBrushTexture] = useState(null);
   const [uploadedModel, setUploadedModel] = useState(null);
   const [triggerAutoUV, setTriggerAutoUV] = useState(0);
-  const [activeChannel, setActiveChannel] = useState("albedo");
+  const [activeChannel, setActiveChannel] = useState("shirt");
   const [layers, setLayers] = useState([]);
   const [activeLayerId, setActiveLayerId] = useState(null);
   const [triggerTextureUpdate, setTriggerTextureUpdate] = useState(0);
-
+  const undoStack = useRef([]);
+  const redoStack = useRef([]);
+  const MAX_HISTORY = 20; // Limite para não estourar a memória RAM
   const finalCompositionRef = useRef(null);
+  const updateComposition = useCallback(() => {
+    if (layers.length > 0 && finalCompositionRef.current) {
+      composeLayers(layers, finalCompositionRef.current);
+      setTriggerTextureUpdate((prev) => prev + 1);
+    }
+  }, [layers]);
+  
+  useEffect(() => {
+    updateComposition();
+  }, [updateComposition]);
+
+
+  const importTemplate = (type,template) => {
+    const targetCanvas =layers.find((l) => l.id === activeLayerId)?.channels[type].canvas;
+    const ctx = targetCanvas.getContext("2d");
+    loadTemplateToCanvas(ctx, template, () => {
+      setTriggerTextureUpdate((prev) => prev + 1);
+    });
+    setTimeout(() => {
+      updateComposition();
+      
+    }, 100);
+  }
+
+  const applyImageDataToLayer = useCallback((layerId, channel, imageData) => {
+    setLayers((prevLayers) => {
+      const newLayers = [...prevLayers];
+      const layerIndex = newLayers.findIndex(l => l.id === layerId);
+      if (layerIndex === -1) return prevLayers;
+
+      const layer = newLayers[layerIndex];
+      const ctx = layer.channels[channel].ctx;
+      
+      // Limpa e desenha os pixels salvos
+      ctx.clearRect(0, 0, 585, 559);
+      if (imageData) {
+        ctx.putImageData(imageData, 0, 0);
+      }
+      
+      return newLayers;
+    });
+
+    // Atualiza o modelo 3D logo em seguida
+    setTimeout(() => updateComposition(), 502);
+  }, [updateComposition]);
+
+  const handleUndo = useCallback(() => {
+    if (undoStack.current.length === 0) return; // Nada para desfazer
+    
+    const action = undoStack.current.pop(); // Tira a última ação
+    redoStack.current.push(action); // Joga para a pilha de refazer
+    
+    // Restaura a imagem de ANTES da pincelada
+    applyImageDataToLayer(action.layerId, action.channel, action.beforeData);
+  }, [applyImageDataToLayer]);
+
+  const handleRedo = useCallback(() => {
+    if (redoStack.current.length === 0) return; // Nada para refazer
+    
+    const action = redoStack.current.pop(); // Tira da pilha de refazer
+    undoStack.current.push(action); // Joga de volta para o undo
+    
+    // Restaura a imagem de DEPOIS da pincelada
+    applyImageDataToLayer(action.layerId, action.channel, action.afterData);
+  }, [applyImageDataToLayer]);
+
+  // Função que o Scene3D vai chamar para salvar a pincelada
+  const saveHistoryAction = useCallback((layerId, channel, beforeData, afterData) => {
+    undoStack.current.push({ layerId, channel, beforeData, afterData });
+    redoStack.current = []; // Sempre que desenhar algo novo, limpa o refazer
+
+    // Remove o mais antigo se passar do limite
+    if (undoStack.current.length > MAX_HISTORY) {
+      undoStack.current.shift();
+    }
+  }, []);
 
   const handleClear = () => {
     if (finalCompositionRef.current) {
       finalCompositionRef.current.shirt.ctx.clearRect(0, 0, 585, 559);
       finalCompositionRef.current.pants.ctx.clearRect(0, 0, 585, 559);
+      clearLayers(layers);
       setTriggerTextureUpdate((prev) => prev + 1);
     }
   }
@@ -93,23 +173,22 @@ useEffect(() => {
     }
 }, []);
 
-  const updateComposition = useCallback(() => {
-    if (layers.length > 0 && finalCompositionRef.current) {
-      composeLayers(layers, finalCompositionRef.current);
-      setTriggerTextureUpdate((prev) => prev + 1);
-    }
-  }, [layers]);
-
-  useEffect(() => {
-    updateComposition();
-  }, [updateComposition]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.ctrlKey || event.metaKey) {
-        event.preventDefault();
-        
-        return
+        if (event.key.toLowerCase() === 'z') {
+          event.preventDefault();
+          if (event.shiftKey) {
+            handleRedo(); // Ctrl + Shift + Z
+          } else {
+            handleUndo(); // Ctrl + Z
+          }
+        } else if (event.key.toLowerCase() === 'y') {
+          event.preventDefault();
+          handleRedo(); // Ctrl + Y
+        }
+        return;
       }
 
 
@@ -140,7 +219,7 @@ useEffect(() => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, []);
+  }, [handleUndo, handleRedo]);
 
   return (
     <div className="App">
@@ -192,9 +271,10 @@ useEffect(() => {
         uploadedModel={uploadedModel}
         brushTexture={brushTexture}
         triggerAutoUV={triggerAutoUV}
+        saveHistoryAction={saveHistoryAction}
         channels={finalCompositionRef.current}
       />
-      <Preview setLayers={setLayers} setTriggerTextureUpdate={setTriggerTextureUpdate} triggerTextureUpdate={triggerTextureUpdate}  finalComposition={finalCompositionRef.current}/>
+      <Preview importTemplate={importTemplate} setTriggerTextureUpdate={setTriggerTextureUpdate} triggerTextureUpdate={triggerTextureUpdate}  finalComposition={finalCompositionRef.current}/>
       <div id="portal-root"></div>
     </div>
   );

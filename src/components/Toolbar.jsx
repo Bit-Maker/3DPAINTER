@@ -36,7 +36,7 @@ const Toolbar = ({
           <input
             type="range"
             min="1"
-            max="100"
+            max="500"
             value={brushSize}
             onChange={(e) => setBrushSize(parseInt(e.target.value))}
           />

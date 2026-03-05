@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import styles from "./Preview.module.scss";
+import { clearLayers } from "../../utils/layerHelper";
 
 const Preview = ({
   finalComposition,
   triggerTextureUpdate,
   setTriggerTextureUpdate,
-  setLayers
+  importTemplate
 }) => {
   const [images, setImages] = useState({ shirt: null, pants: null });
 
@@ -58,13 +59,7 @@ const Preview = ({
           );
           return;
         }
-
-        const targetCanvas = finalComposition[activeType.current].canvas;
-        const ctx = targetCanvas.getContext("2d");
-
-        ctx.clearRect(0, 0, 585, 559);
-        ctx.drawImage(img, 0, 0);
-
+        importTemplate(activeType.current, event.target.result);
         setTriggerTextureUpdate((prev) => prev + 1);
       };
       img.src = event.target.result;

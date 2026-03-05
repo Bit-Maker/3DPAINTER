@@ -74,17 +74,7 @@ export const performBucketFill = (ctx, face, geometry, color, opacity,eraser) =>
   // 3. Desenhar o triângulo no Canvas
   if(eraser) {
     ctx.globalCompositeOperation = "destination-out";
-    ctx.beginPath();
-    ctx.moveTo(uvA.x * CANVAS_W, (1 - uvA.y) * CANVAS_H);
-    ctx.lineTo(uvB.x * CANVAS_W, (1 - uvB.y) * CANVAS_H);
-    ctx.lineTo(uvC.x * CANVAS_W, (1 - uvC.y) * CANVAS_H);
-    ctx.closePath();
-    
-    // 4. Apagar
-    ctx.clear();
-
-    ctx.restore();
-  } else {
+  } 
     ctx.beginPath();
     ctx.moveTo(uvA.x * CANVAS_W, (1 - uvA.y) * CANVAS_H);
     ctx.lineTo(uvB.x * CANVAS_W, (1 - uvB.y) * CANVAS_H);
@@ -95,5 +85,4 @@ export const performBucketFill = (ctx, face, geometry, color, opacity,eraser) =>
     ctx.fill();
 
     ctx.restore();
-  }
 };
