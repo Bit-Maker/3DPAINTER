@@ -173,6 +173,15 @@ const toggleBodyPart = (partName) => {
     setActiveLayerId(newId);
   };
 
+  const handleDeleteLayer = (id) => {
+    setLayers((prev) => prev.filter((l) => l.id !== id));
+    if (activeLayerId === id) {
+      setActiveLayerId(layers.find((l) => l.id !== id)?.id || null);
+    }
+  };
+
+
+
 useEffect(() => {
     if (!finalCompositionRef.current) {
         finalCompositionRef.current = {
@@ -277,6 +286,7 @@ useEffect(() => {
         onUpdate={updateComposition}
         addLayer={handleAddLayer}
         updateOpacity={updateLayerOpacity}
+        deleteLayer={handleDeleteLayer}
         />
         
         <BodyPartsPanel visibilityState={bodyPartsVisibility} togglePart={toggleBodyPart} />

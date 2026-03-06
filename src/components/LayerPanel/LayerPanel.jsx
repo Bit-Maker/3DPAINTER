@@ -6,6 +6,7 @@ const LayerPanel = ({
   setLayers,
   setActiveLayerId,
   addLayer,
+  deleteLayer,
   updateOpacity
 }) => {
   
@@ -72,6 +73,12 @@ const LayerPanel = ({
               <span style={{ fontSize: "11px", opacity: 0.8 }}>{layer.name}</span>
               
               <div style={{ display: "flex", gap: "5px" }}>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); deleteLayer(layer.id); }}
+                  style={btnStyle}
+                >
+                  Delete
+                </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); moveLayer(index, -1); }}
                   disabled={index === 0}
