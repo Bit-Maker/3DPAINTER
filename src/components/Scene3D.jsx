@@ -90,11 +90,17 @@ useEffect(() => {
     modelRef.current.traverse((child) => {
       if (child.isMesh) {
         const name = child.name.toLowerCase();
+        const isPants = name.includes("leg") || name.includes("foot");
         if (child.material) {
           child.material = child.material.clone();
+          child.material = new THREE.MeshBasicMaterial({
+  map: isPants ? pantsTexture : shirtTexture,
+  side: THREE.DoubleSide,
+  transparent: true,
+  alphaTest: 0.05
+});
         }
 
-        const isPants = name.includes("leg") || name.includes("foot");
 
         if (isPants) {
           child.material.map = pantsTexture;
@@ -170,7 +176,7 @@ useEffect(() => {
     controlsRef.current = controls;
 
     // Iluminação forte e plana para ver as texturas claramente
-    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    //scene.add(new THREE.AmbientLight(0xffffff, 1.2));
 
     // Material Simples (MeshBasicMaterial = Sem sombras/reflexos, ideal para 2D clássico)
     materialRef.current = new THREE.MeshBasicMaterial({
