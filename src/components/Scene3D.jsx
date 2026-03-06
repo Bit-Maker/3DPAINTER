@@ -14,11 +14,15 @@ const Scene3D = ({
   brushTexture,
   finalComposition,
   activeLayerId,
+  setModel,
+  handleModelLoaded,
   layers,
   saveHistoryAction,
   onPaintEnd,
   activeChannel,
+  bodyPartsVisibility,
   onUVsExtracted,
+  onModelLoaded,
   onDownloadTexture,
   faceLockMode = false,
   triggerTextureUpdate,
@@ -49,6 +53,18 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
     onUVsExtracted(allLines);
   };
 
+      // Receba bodyPartsVisibility como prop no Scene3D
+useEffect(() => {
+  if (modelRef.current && bodyPartsVisibility) {
+    modelRef.current.traverse((child) => {
+      if (child.isMesh && bodyPartsVisibility[child.name] !== undefined) {
+        // Liga ou desliga a visibilidade do mesh no Three.js
+        child.visible = bodyPartsVisibility[child.name];
+      }
+    });
+  }
+}, [bodyPartsVisibility]); // Executa sempre que você clica no olhinho na interface
+
   const applyTexturesToModel = () => {
     if (!modelRef.current || !finalComposition) return;
     const shirtCtx = finalComposition.shirt?.ctx;
@@ -68,6 +84,8 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
       tex.flipY = true;
       tex.needsUpdate = true;
     });
+
+
 
     modelRef.current.traverse((child) => {
       if (child.isMesh) {
@@ -137,6 +155,8 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.outputColorSpace = THREE.LinearSRGBColorSpace; // Ou THREE.NoColorSpace em versões recentes
+    renderer.toneMapping = THREE.NoToneMapping; // Impede que o renderer mude o brilho/contraste
     mountNode.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -223,7 +243,7 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
 
     if (!textureRef.current) {
       const tex = new THREE.CanvasTexture(canvas);
-      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.colorSpace = THREE.NoColorSpace;
       textureRef.current = tex;
       materialRef.current.map = tex;
     } else {
@@ -255,6 +275,7 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
           const maxAxis = Math.max(size.x, size.y, size.z);
           const scale = 2.0 / maxAxis;
           object.scale.set(scale, scale, scale);
+          const parts = [];
           setTimeout(() => {
             object.traverse((child) => {
               if (
@@ -264,7 +285,7 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
                 finalComposition.pants
               ) {
                 const name = child.name.toLowerCase();
-
+                parts.push(child.name); // Pega o nome de cada membro
                 const shirtTex = new THREE.CanvasTexture(
                   finalComposition.shirt.canvas,
                 );
@@ -285,10 +306,14 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
             });
           }, 1000);
 
+          if (onModelLoaded) onModelLoaded(parts);
+
           modelRef.current = object;
           sceneRef.current.add(object);
           fitCameraToObject(object);
           updateUVOverlay(object);
+          setModel(object);
+          handleModelLoaded(object.children);
         },
         undefined,
         (error) => console.error("Erro ao carregar avatar.obj:", error),
@@ -306,11 +331,13 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
     mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
     raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
-
-    const intersects = raycasterRef.current.intersectObject(
-      modelRef.current,
-      true,
-    );
+    const objectsToTest = [];
+  modelRef.current.traverse((child) => {
+    if (child.isMesh && child.visible) {
+      objectsToTest.push(child);
+    }
+  });
+    const intersects = raycasterRef.current.intersectObjects(objectsToTest, false);
 
     if (intersects.length > 0 && intersects[0].uv) {
       const intersect = intersects[0];

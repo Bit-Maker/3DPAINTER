@@ -16,6 +16,7 @@ const Toolbar = ({
   handleClear,
   handleUndo,
   handleRedo,
+  model
 }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -123,6 +124,12 @@ const Toolbar = ({
           >
             Limpar Tudo
           </button>
+        </div>
+        <div className="bodyParts">
+          <label>Partes do corpo</label>
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            {model?.name}
+          </div>
         </div>
       </div>
     </>

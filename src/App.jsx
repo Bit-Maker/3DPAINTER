@@ -6,6 +6,7 @@ import LayerPanel from "./components/LayerPanel/LayerPanel";
 import { createNewCanvas } from "./utils/canvasHelpers";
 import { createLayer, composeLayers,clearLayers } from "./utils/layerHelper";
 import "./App.css";
+import BodyPartsPanel from "./components/BodyPartsPanel";
 import Preview from "./components/Preview/Preview";
 import { loadTemplateToCanvas } from "./utils/canvasHelpers";
 
@@ -27,6 +28,7 @@ function App() {
   const redoStack = useRef([]);
   const MAX_HISTORY = 20; // Limite para não estourar a memória RAM
   const finalCompositionRef = useRef(null);
+  const [bodyPartsVisibility, setBodyPartsVisibility] = useState({});
   const updateComposition = useCallback(() => {
     if (layers.length > 0 && finalCompositionRef.current) {
       composeLayers(layers, finalCompositionRef.current);
@@ -38,6 +40,23 @@ function App() {
     updateComposition();
   }, [updateComposition]);
 
+
+  const handleModelLoaded = (parts) => {
+  // parts será um array com os nomes dos meshes, ex: ["Head", "Torso", "LeftArm"...]
+  console.log("Model parts loaded:", parts);
+  const initialState = {};
+  parts.forEach(part => {
+    initialState[part.name] = true; // Tudo começa visível
+  });
+  setBodyPartsVisibility(initialState);
+};
+
+const toggleBodyPart = (partName) => {
+  setBodyPartsVisibility(prev => ({
+    ...prev,
+    [partName]: !prev[partName]
+  }));
+};
 
   const importTemplate = (type,template) => {
     const targetCanvas =layers.find((l) => l.id === activeLayerId)?.channels[type].canvas;
@@ -239,6 +258,7 @@ useEffect(() => {
         handleClear={handleClear}
         setIsBucketMode={setIsBucketMode}
         setIsEraser={setIsEraser}
+        model={uploadedModel}
         setUploadedModel={setUploadedModel}
         setBrushTexture={setBrushTexture}
         handleAutoUV={() => setTriggerAutoUV((p) => p + 1)}
@@ -254,7 +274,7 @@ useEffect(() => {
         updateOpacity={updateLayerOpacity}
         />
         
-        
+        <BodyPartsPanel visibilityState={bodyPartsVisibility} togglePart={toggleBodyPart} />
     
       <Scene3D
         layers={layers}
@@ -271,6 +291,9 @@ useEffect(() => {
         uploadedModel={uploadedModel}
         brushTexture={brushTexture}
         triggerAutoUV={triggerAutoUV}
+        handleModelLoaded={handleModelLoaded}
+        bodyPartsVisibility={bodyPartsVisibility}
+        setModel={setUploadedModel}
         saveHistoryAction={saveHistoryAction}
         channels={finalCompositionRef.current}
       />
