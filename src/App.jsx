@@ -46,7 +46,12 @@ function App() {
   console.log("Model parts loaded:", parts);
   const initialState = {};
   parts.forEach(part => {
-    initialState[part.name] = true; // Tudo começa visível
+    if (part.name !== "Head") {
+      initialState[part.name] = true; // Tudo começa visível
+    }
+    else {
+      initialState[part.name] = false; // Deixa a cabeça invisível por padrão
+    }
   });
   setBodyPartsVisibility(initialState);
 };
