@@ -1,7 +1,5 @@
-import React from "react";
-import ReactDOM from "react-dom";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import styles from "./LayerPanel.module.scss";
+
 const LayerPanel = ({
   layers,
   activeLayerId,
@@ -10,31 +8,22 @@ const LayerPanel = ({
   addLayer,
   updateOpacity
 }) => {
-const portal = document.getElementById("portal-root");
-
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
-
-    // Criamos uma cópia do array
-    const items = Array.from(layers);
+  
+  // Função para mover a camada no array
+  const moveLayer = (index, direction) => {
+    const newIndex = index + direction;
     
-    // Como a lista visual está de cabeça para baixo, precisamos inverter o índice do cálculo
-    // MAS, a melhor forma é remover o 'column-reverse' e inverter o array antes do map.
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    // Verifica se o movimento é possível (dentro dos limites do array)
+    if (newIndex < 0 || newIndex >= layers.length) return;
 
-    setLayers(items);
-  };
-// eslint-disable-next-line
-  const toggleVisibility = (id) => {
-    setLayers(layers.map((l) => l.id === id ? { ...l, visible: !l.visible } : l));
-  };
-// eslint-disable-next-line
-  const deleteLayer = (id) => {
-    if (layers.length <= 1) return;
-    const newLayers = layers.filter((l) => l.id !== id);
+    const newLayers = [...layers];
+    const item = newLayers[index];
+    
+    // Remove o item e insere na nova posição
+    newLayers.splice(index, 1);
+    newLayers.splice(newIndex, 0, item);
+
     setLayers(newLayers);
-    if (activeLayerId === id) setActiveLayerId(newLayers[newLayers.length - 1].id);
   };
 
   return (
@@ -48,74 +37,75 @@ const portal = document.getElementById("portal-root");
         + Nova Camada
       </button>
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="layers-list">
-          {(provided) => (
-            <div 
-              {...provided.droppableProps} 
-              ref={provided.innerRef}
-              style={{ display: "flex", flexDirection: "column-reverse", gap: "5px" }}
-            >
-              {layers.map((layer, index) => (
-                <Draggable key={layer.id} draggableId={layer.id.toString()} index={index}>
-                  {(provided, snapshot) => {
-                    // LÓGICA DO PORTAL:
-                    const child = (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        style={{
-                          ...provided.draggableProps.style,
-                          padding: "10px",
-                          backgroundColor: snapshot.isDragging ? "#555" : (activeLayerId === layer.id ? "#444" : "#333"),
-                          border: activeLayerId === layer.id ? "1px solid #4CAF50" : "1px solid transparent",
-                          borderRadius: "6px",
-                          marginBottom: "5px",
-                          zIndex: snapshot.isDragging ? 9999 : 1 // Garante que fique em cima
-                        }}
-                        onClick={() => setActiveLayerId(layer.id)}
-                      >
-                        {/* Conteúdo da sua camada (Nome, Visibilidade, Preview) */}
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <img 
-                          style={{ width: "30px", height: "30px", backgroundColor: "#fff", borderRadius: "2px" }}
-                          src={layer.channels.shirt.canvas.toDataURL()} 
-                          alt="preview" 
-                        />
-                        <input 
-                          type="range" min="0" max="1" step="0.1" 
-                          value={layer.opacity}
-                          style={{ flex: 1 }}
-                          onClick={(e) => e.stopPropagation()} 
-                          onChange={(e) => updateOpacity(layer.id, parseFloat(e.target.value))}
-                        />
-                      </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                           <span style={{ fontSize: "11px" }}>{layer.name}</span>
-                           <span style={{ opacity: 0.5 }}>{index + 1}</span>
-                        </div>
-                      </div>
-                    );
-
-                    // Se estiver arrastando, joga para o Portal fora do painel lateral
-                    if (snapshot.isDragging) {
-                      return ReactDOM.createPortal(child, portal);
-                    }
-
-                    return child;
-                  }}
-
-                  
-                </Draggable>
-              ))}
-              {provided.placeholder}
+      <div style={{ display: "flex", flexDirection: "column-reverse", gap: "5px" }}>
+        {layers.map((layer, index) => (
+          <div
+            key={layer.id}
+            onClick={() => setActiveLayerId(layer.id)}
+            style={{
+              padding: "10px",
+              backgroundColor: activeLayerId === layer.id ? "#444" : "#333",
+              border: activeLayerId === layer.id ? "1px solid #4CAF50" : "1px solid transparent",
+              borderRadius: "6px",
+              marginBottom: "5px",
+              cursor: "pointer"
+            }}
+          >
+            {/* Linha Superior: Preview e Opacidade */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+              <img 
+                style={{ width: "30px", height: "30px", backgroundColor: "#fff", borderRadius: "2px", objectFit: "contain" }}
+                src={layer.channels.shirt.canvas.toDataURL()} 
+                alt="preview" 
+              />
+              <input 
+                type="range" min="0" max="1" step="0.1" 
+                value={layer.opacity}
+                style={{ flex: 1 }}
+                onClick={(e) => e.stopPropagation()} 
+                onChange={(e) => updateOpacity(layer.id, parseFloat(e.target.value))}
+              />
             </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+
+            {/* Linha Inferior: Nome e Controles de Ordem */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "11px", opacity: 0.8 }}>{layer.name}</span>
+              
+              <div style={{ display: "flex", gap: "5px" }}>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); moveLayer(index, -1); }}
+                  disabled={index === 0}
+                  style={btnStyle}
+                >
+                  ▼
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); moveLayer(index, 1); }}
+                  disabled={index === layers.length - 1}
+                  style={btnStyle}
+                >
+                  ▲
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
+};
+
+// Estilo auxiliar para os botões de seta
+const btnStyle = {
+  background: "#555",
+  color: "white",
+  border: "none",
+  borderRadius: "3px",
+  cursor: "pointer",
+  padding: "2px 6px",
+  fontSize: "10px",
+  opacity: "1",
+  transition: "0.2s"
 };
 
 export default LayerPanel;
