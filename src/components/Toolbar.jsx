@@ -1,5 +1,6 @@
 import "./Toolbar.css";
 import { useState } from "react";
+import { lightingProfiles, updateSceneLighting } from "../utils/3DHelper";
 const Toolbar = ({
   activeChannel,
   brushColor,
@@ -17,6 +18,9 @@ const Toolbar = ({
   isMirrorEnabled,
   handleClear,
   handleUndo,
+  scene,
+  myAmbLight,
+  myDirLight,
   handleRedo,
   importRobloxTemplate,
   model
@@ -153,6 +157,20 @@ const Toolbar = ({
 >
   {isMirrorEnabled ? "🪞 Espelhamento Ativo" : "Standard Mode"}
 </button>
+<div className="lighting-toolbar">
+  {Object.keys(lightingProfiles).map((mode) => (
+    <button 
+      key={mode} 
+      onClick={() => updateSceneLighting(scene, myAmbLight, myDirLight, mode)}
+      title={`Testar em modo ${mode}`}
+    >
+      {mode === 'midday' && '☀️'}
+      {mode === 'sunset' && '🌅'}
+      {mode === 'night' && '🌑'}
+      {mode === 'studio' && '🛠️'}
+    </button>
+  ))}
+</div>
       </div>
     </>
   );

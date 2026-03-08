@@ -20,6 +20,9 @@ const Scene3D = ({
   saveHistoryAction,
   onPaintEnd,
   activeChannel,
+  setScene,
+  setAmbientLight,
+  setDirLight,
   bodyPartsVisibility,
   onUVsExtracted,
   isMirrorEnabled,
@@ -181,7 +184,13 @@ const Scene3D = ({
     controlsRef.current = controls;
 
     // Iluminação forte e plana para ver as texturas claramente
-    //scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    setScene(scene); // Passa a cena para o App.jsx
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    dirLight.position.set(0, 0, 10);
+    scene.add(dirLight);
+    setAmbientLight(scene.children.find((c) => c.isAmbientLight));
+    setDirLight(dirLight);
 
     // Material Simples (MeshBasicMaterial = Sem sombras/reflexos, ideal para 2D clássico)
     materialRef.current = new THREE.MeshBasicMaterial({

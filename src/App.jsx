@@ -9,7 +9,7 @@ import "./App.css";
 import BodyPartsPanel from "./components/BodyPartsPanel";
 import Preview from "./components/Preview/Preview";
 import { loadTemplateToCanvas } from "./utils/canvasHelpers";
-
+import { serializeLayers } from "./utils/save";
 
 function App() {
   const [brushColor, setBrushColor] = useState("#000");
@@ -30,6 +30,11 @@ function App() {
   const MAX_HISTORY = 20; // Limite para não estourar a memória RAM
   const finalCompositionRef = useRef(null);
   const [bodyPartsVisibility, setBodyPartsVisibility] = useState({});
+  const [lightingMode, setLightingMode] = useState('studio');
+  const [scene, setScene] = useState(null);
+  const [ambientLight, setAmbientLight] = useState(null);
+  const [dirLight, setDirLight] = useState(null);
+const [assetId, setAssetId] = useState("Novo Projeto"); // Estado para o ID do asset atual
   const updateComposition = useCallback(() => {
     if (layers.length > 0 && finalCompositionRef.current) {
       composeLayers(layers, finalCompositionRef.current);
@@ -176,31 +181,77 @@ const toggleBodyPart = (partName) => {
     }
   };
 
+  const createCanvasFromBase64 = (base64) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 585;
+        canvas.height = 559;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas);
+      };
+    });
+  };
 
 
 useEffect(() => {
+  const initApp = async () => {
+    // 1. Inicializa os canais de composição final se não existirem
     if (!finalCompositionRef.current) {
-        finalCompositionRef.current = {
-            shirt: createNewCanvas("transparent", 585, 559),
-            pants: createNewCanvas("transparent", 585, 559),
-        };
-
-        const baseLayer = createLayer(Date.now(), "Camada Base");
-        if (baseLayer.channels.shirt.ctx) {
-            loadTemplateToCanvas(baseLayer.channels.shirt.ctx, "/templates/TemplateShirt.png");
-        }
-        if (baseLayer.channels.pants.ctx) {
-            loadTemplateToCanvas(baseLayer.channels.pants.ctx, "/templates/TemplatePants.png");
-        }
-
-        setLayers([baseLayer]);
-        setActiveLayerId(baseLayer.id);
-        setTimeout(() => {
-            composeLayers([baseLayer], finalCompositionRef.current);
-            setTriggerTextureUpdate(prev => prev + 1);
-        }, 150);
+      finalCompositionRef.current = {
+        shirt: createNewCanvas("transparent", 585, 559),
+        pants: createNewCanvas("transparent", 585, 559),
+      };
     }
-}, []);
+
+    // 2. Tenta buscar o backup primeiro
+    const savedData = localStorage.getItem('roblox_editor_backup');
+    
+    if (savedData) {
+      try {
+        const backup = JSON.parse(savedData);
+        console.log("📂 Backup encontrado, restaurando...");
+
+        const restoredLayers = await Promise.all(backup.layers.map(async (layer) => {
+          const shirtCanvas = await createCanvasFromBase64(layer.images.shirt);
+          const pantsCanvas = await createCanvasFromBase64(layer.images.pants);
+          return {
+            ...layer,
+            channels: {
+              shirt: { canvas: shirtCanvas, ctx: shirtCanvas.getContext('2d') },
+              pants: { canvas: pantsCanvas, ctx: pantsCanvas.getContext('2d') }
+            }
+          };
+        }));
+
+        setLayers(restoredLayers);
+        setActiveLayerId(restoredLayers[0]?.id);
+        setAssetId(backup.assetId || "Projeto Recuperado");
+
+        return; // Finaliza aqui se restaurou com sucesso
+      } catch (e) {
+        console.error("❌ Erro ao restaurar backup:", e);
+      }
+    } else {
+
+    // 3. Se NÃO houver backup, aí sim criamos a Camada Base do zero
+    console.log("🆕 Nenhum backup encontrado. Criando projeto novo...");
+    const baseLayer = createLayer(Date.now(), "Camada Base");
+    
+    loadTemplateToCanvas(baseLayer.channels.shirt.ctx, "/templates/TemplateShirt.png");
+    loadTemplateToCanvas(baseLayer.channels.pants.ctx, "/templates/TemplatePants.png");
+
+    setLayers([baseLayer]);
+    setActiveLayerId(baseLayer.id);
+    
+    setTimeout(() => updateComposition(), 200);
+  };
+  }
+  initApp();
+}, [updateComposition]); // Executa apenas uma vez ao montar o componente
 
 
   useEffect(() => {
@@ -250,11 +301,36 @@ useEffect(() => {
     };
   }, [handleUndo, handleRedo]);
 
+useEffect(() => {
+  // Impede de salvar um projeto vazio por cima de um backup existente no primeiro render
+  if (layers.length === 0) return;
+
+  const timeout = setInterval(() => {
+    try {
+      const dataToSave = {
+        assetId,
+        layers: serializeLayers(layers),
+        lastSaved: Date.now()
+      };
+      
+      localStorage.setItem('roblox_editor_backup', JSON.stringify(dataToSave));
+      console.log("💾 Autosave realizado com sucesso!");
+    } catch (e) {
+      console.warn("⚠️ Falha no autosave (provavelmente limite de 5MB do LocalStorage excedido)");
+    }
+  }, 2000); // Salva 2 segundos após a última alteração
+
+  return () => clearTimeout(timeout);
+}); // <--- OBRIGATÓRIO: observar mudanças aqui
+
   return (
     <div className="App">
       <BrushCursor size={brushSize} visible={true} />
 
       <Toolbar
+      scene={scene}
+      myAmbLight={ambientLight}
+      myDirLight={dirLight}
       setIsMirrorEnabled={setIsMirrorEnabled}
       isMirrorEnabled={isMirrorEnabled}
         activeChannel={activeChannel}
@@ -270,7 +346,11 @@ useEffect(() => {
         handleClear={handleClear}
         setIsBucketMode={setIsBucketMode}
         setIsEraser={setIsEraser}
+
         model={uploadedModel}
+        lightingMode={lightingMode}
+        setLightingMode={setLightingMode}
+        importRobloxTemplate={importTemplate}
         setUploadedModel={setUploadedModel}
         setBrushTexture={setBrushTexture}
         handleAutoUV={() => setTriggerAutoUV((p) => p + 1)}
@@ -290,8 +370,11 @@ useEffect(() => {
         <BodyPartsPanel visibilityState={bodyPartsVisibility} togglePart={toggleBodyPart} />
     
       <Scene3D
+        setScene={setScene}
         layers={layers}
         activeLayerId={activeLayerId}
+        setAmbientLight={setAmbientLight}
+        setDirLight={setDirLight}
         finalComposition={finalCompositionRef.current}
         triggerTextureUpdate={triggerTextureUpdate}
         onPaintEnd={updateComposition}
@@ -309,6 +392,7 @@ useEffect(() => {
         setModel={setUploadedModel}
         saveHistoryAction={saveHistoryAction}
         isMirrorEnabled={isMirrorEnabled}
+        setLightingMode={setLightingMode}
         channels={finalCompositionRef.current}
       />
       <Preview importTemplate={importTemplate} setTriggerTextureUpdate={setTriggerTextureUpdate} triggerTextureUpdate={triggerTextureUpdate}  finalComposition={finalCompositionRef.current}/>
