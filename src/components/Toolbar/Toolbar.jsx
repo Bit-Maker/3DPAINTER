@@ -27,6 +27,8 @@ const Toolbar = ({
   myDirLight,
   handleRedo,
   importRobloxTemplate,
+  isEyedropper,
+  setIsEyedropper,
 }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -180,6 +182,26 @@ const Toolbar = ({
   }}
 >
   {isWrapMode ? "🔄 Wrap Mode Ativo" : "Standard Mode"}
+</button>
+// Adicione junto com os botões de Pincel, Balde e Borracha
+<button 
+  className={`tool-btn ${isEyedropper ? 'active' : ''}`}
+  onClick={() => {
+    setIsEyedropper(!isEyedropper);
+    setIsEraser(false);
+    setIsBucketMode(false);
+  }}
+  style={{
+    backgroundColor: isEyedropper ? '#4CAF50' : '#333',
+    color: 'white',
+    padding: '8px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    border: 'none'
+  }}
+  title="Conta-gotas (Copiar Cor)"
+>
+  Pipeta 💉
 </button>
 <div className="lighting-toolbar">
   {Object.keys(lightingProfiles).map((mode) => (

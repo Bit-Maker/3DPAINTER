@@ -14,7 +14,10 @@ const Preview = ({
   brushOpacity,
   isEraser,
   onPaintEnd, // O mesmo updateComposition usado no 3D
-  saveHistoryAction
+  saveHistoryAction,
+  isEyedropper,
+  setIsEyedropper,
+  setBrushColor,
 }) => {
   const shirtCanvasRef = useRef(null);
   const pantsCanvasRef = useRef(null);
@@ -53,18 +56,45 @@ const Preview = ({
     };
   };
 
-  const startDrawing = (e, type) => {
-    const activeLayer = layers?.find((l) => l.id === activeLayerId);
-    if (!activeLayer || !activeLayer.visible) return;
+ // Função auxiliar para converter RGB do Canvas para HEX do Pincel
+const rgbToHex = (r, g, b) => {
+  return "#" + [r, g, b].map(x => {
+    const hex = x.toString(16);
+    return hex.length === 1 ? "0" + hex : hex;
+  }).join("");
+};
 
-    isDrawing.current = true;
-    const canvas = type === "shirt" ? shirtCanvasRef.current : pantsCanvasRef.current;
-    lastPos.current = getMousePos(e, canvas);
+// Modifique o evento de clique inicial
+const startDrawing = (e, type) => {
+  const canvas = type === "shirt" ? shirtCanvasRef.current : pantsCanvasRef.current;
+  const pos = getMousePos(e, canvas);
 
-    // Salva o estado para o Undo (Ctrl+Z)
-    const ctx = activeLayer.channels[type].ctx;
-    beforePaintData.current = ctx.getImageData(0, 0, 585, 559);
-  };
+  // --- LÓGICA DO CONTA-GOTAS ---
+  if (isEyedropper) {
+    const ctx = canvas.getContext("2d");
+    // Pega exatamente 1 pixel na posição do mouse
+    const pixel = ctx.getImageData(pos.x, pos.y, 1, 1).data; 
+    
+    // Se o alpha (transparência) for maior que 0, copia a cor
+    if (pixel[3] > 0) {
+      const hexColor = rgbToHex(pixel[0], pixel[1], pixel[2]);
+      setBrushColor(hexColor);
+    }
+    
+    setIsEyedropper(false); // Desativa o conta-gotas após o uso (UX padrão)
+    return; // Para a execução aqui para não desenhar
+  }
+
+  // --- LÓGICA NORMAL DE DESENHO (se o conta-gotas não estiver ativo) ---
+  const activeLayer = layers?.find((l) => l.id === activeLayerId);
+  if (!activeLayer || !activeLayer.visible) return;
+
+  isDrawing.current = true;
+  lastPos.current = pos;
+
+  const ctx = activeLayer.channels[type].ctx;
+  beforePaintData.current = ctx.getImageData(0, 0, 585, 559);
+};
 
   const draw = (e, type) => {
     if (!isDrawing.current) return;

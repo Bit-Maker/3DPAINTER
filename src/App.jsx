@@ -37,6 +37,7 @@ function App() {
   const [dirLight, setDirLight] = useState(null);
   const [isWrapMode, setWrapMode] = useState(false);
   const [assetId, setAssetId] = useState("Novo Projeto"); // Estado para o ID do asset atual
+  const [isEyedropper, setIsEyedropper] = useState(false);
   const updateComposition = useCallback(() => {
     if (layers.length > 0 && finalCompositionRef.current) {
       composeLayers(layers, finalCompositionRef.current);
@@ -380,6 +381,8 @@ function App() {
         setUploadedModel={setUploadedModel}
         setBrushTexture={setBrushTexture}
         handleAutoUV={() => setTriggerAutoUV((p) => p + 1)}
+        isEyedropper={isEyedropper}
+        setIsEyedropper={setIsEyedropper}
       />
 
       <LayerPanel
@@ -440,6 +443,9 @@ function App() {
         isEraser={isEraser}
         onPaintEnd={updateComposition}
         saveHistoryAction={saveHistoryAction}
+        isEyedropper={isEyedropper}
+        setBrushColor={setBrushColor}
+        setIsEyedropper={setIsEyedropper}
       />
       <div id="portal-root"></div>
     </div>
