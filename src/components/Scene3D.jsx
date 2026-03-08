@@ -21,6 +21,7 @@ const Scene3D = ({
   saveHistoryAction,
   onPaintEnd,
   activeChannel,
+  bodyColor,
   setScene,
   setAmbientLight,
   setDirLight,
@@ -32,6 +33,7 @@ const Scene3D = ({
   faceLockMode = false,
   triggerTextureUpdate,
   isBucketMode,
+  setActiveChannel
 }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -74,13 +76,13 @@ const Scene3D = ({
     if (!modelRef.current || !finalComposition) return;
     const shirtCtx = finalComposition.shirt?.ctx;
     const pantsCtx = finalComposition.pants?.ctx;
-    const finalShirtCanvas = createNewCanvas("rgb(255, 219, 141)", 585, 559);
+    const finalShirtCanvas = createNewCanvas(bodyColor, 585, 559);
     finalShirtCanvas.ctx.drawImage(
       shirtCtx ? shirtCtx.canvas : finalShirtCanvas.canvas,
       0,
       0,
     );
-    const finalPantsCanvas = createNewCanvas("rgb(255, 219, 141)", 585, 559);
+    const finalPantsCanvas = createNewCanvas(bodyColor, 585, 559);
     finalPantsCanvas.ctx.drawImage(
       pantsCtx ? pantsCtx.canvas : finalPantsCanvas.canvas,
       0,
@@ -128,7 +130,7 @@ const Scene3D = ({
   useEffect(() => {
     applyTexturesToModel();
     // eslint-disable-next-line
-  }, [triggerTextureUpdate, finalComposition]);
+  }, [triggerTextureUpdate, finalComposition,bodyColor]);
 
   const fitCameraToObject = (object) => {
     if (!cameraRef.current || !controlsRef.current) return;
@@ -371,6 +373,7 @@ const Scene3D = ({
       if (meshName.includes("leg")) {
         targetChannel = "pants";
       }
+      setActiveChannel(targetChannel);
       const isSameMember =
         lastPaintTarget.current.objectId === intersect.object.id;
       const prevX = isSameMember ? lastPaintTarget.current.x : null;

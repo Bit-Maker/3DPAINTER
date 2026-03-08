@@ -1,6 +1,6 @@
 import "./Toolbar.css";
 import { useState } from "react";
-import { lightingProfiles, updateSceneLighting } from "../utils/3DHelper";
+import { lightingProfiles, updateSceneLighting } from "../../utils/3DHelper";
 const Toolbar = ({
   activeChannel,
   brushColor,
@@ -11,6 +11,8 @@ const Toolbar = ({
   setBrushOpacity,
   isEraser,
  isBucketMode,
+ bodyColor,
+ setBodyColor,
   setIsEraser,
   isWrapMode,
   setWrapMode,
@@ -25,7 +27,6 @@ const Toolbar = ({
   myDirLight,
   handleRedo,
   importRobloxTemplate,
-  model
 }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -60,7 +61,7 @@ const Toolbar = ({
             }}
           >
             <label style={{ fontSize: "10px", color: "#888" }}>
-              Força: {Math.round(brushOpacity * 100)}%
+              Opacidade: {Math.round(brushOpacity * 100)}%
             </label>
           </div>
           <input
@@ -115,6 +116,13 @@ const Toolbar = ({
               />
             </>
           )}
+          <input
+                type="color"
+                value={bodyColor}
+                onChange={(e) => {
+                  setBodyColor(e.target.value);
+                }}
+              />
         </div>
         {activeChannel === "normal" && (
           <p style={{ fontSize: "9px", color: "#673AB7" }}>

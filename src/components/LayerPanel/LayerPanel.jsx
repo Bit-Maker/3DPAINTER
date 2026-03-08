@@ -28,11 +28,7 @@ const LayerPanel = ({
   };
 
   return (
-    <div className={styles.uipanel} style={{
-      position: "absolute", right: "10px", top: "45vh", height: "50vh", 
-      width: "250px", overflowY: "auto", backgroundColor: "#2a2a2a", 
-      padding: "10px", borderRadius: "8px", color: "white"
-    }}>
+    <div className={styles.uipanel}>
       <h3>Camadas</h3>
       <button onClick={addLayer} style={{ marginBottom: "10px", width: "100%", padding: "8px", background: "#4CAF50", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
         + Nova Camada

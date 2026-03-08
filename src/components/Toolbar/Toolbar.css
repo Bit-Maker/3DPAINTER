@@ -46,9 +46,9 @@
 
 .ui-panel {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  width: 280px;
+  top: 10px;
+  height: 50vh;
+  width: 20vw;
   background: var(--panel-bg);
   backdrop-filter: blur(10px); 
   padding: 20px;

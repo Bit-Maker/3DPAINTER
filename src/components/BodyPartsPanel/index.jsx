@@ -2,7 +2,7 @@
 const BodyPartsPanel = ({ visibilityState, togglePart }) => {
   return (
     <div className="ui-panel" style={{
-      position: "absolute", left: "1vw", top: "75vh", 
+      position: "absolute", left: "1vw", top: "70vh", 
       backgroundColor: "#2a2a2a", padding: "10px", 
       height: "20vh", overflowY: "auto",
       borderRadius: "8px", color: "white", width: "150px"
