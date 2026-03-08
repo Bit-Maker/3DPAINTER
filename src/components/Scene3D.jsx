@@ -282,7 +282,6 @@ const Scene3D = ({
     if (sceneRef.current && !uploadedModel) {
       const loader = new OBJLoader();
       const modelPath = "/models/avatar.obj"; // Certifique-se que o arquivo está em public/models/
-
       loader.load(
         modelPath,
         (object) => {
@@ -340,6 +339,8 @@ const Scene3D = ({
         (error) => console.error("Erro ao carregar avatar.obj:", error),
       );
     }
+    onPaintEnd()
+
     // eslint-disable-next-line
   }, [uploadedModel]);
 
