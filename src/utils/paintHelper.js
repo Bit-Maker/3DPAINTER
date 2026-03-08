@@ -103,7 +103,7 @@ export const performWrapLine = (
   color,
   opacity,
   isEraser,
-  channel // "shirt" ou "pants" para evitar conflitos de perna/braço
+  isMirrorEnabled
 ) => {
   if (!ctx) return;
 
@@ -133,6 +133,13 @@ export const performWrapLine = (
   ctx.moveTo(zone.minX, y);
   ctx.lineTo(zone.maxX, y);
   ctx.stroke();
+
+  if (isMirrorEnabled) {
+    ctx.beginPath();
+    ctx.moveTo(ctx.canvas.width -zone.minX, y);
+    ctx.lineTo(ctx.canvas.width -zone.maxX, y);
+    ctx.stroke();
+  }
 
   ctx.restore();
 };

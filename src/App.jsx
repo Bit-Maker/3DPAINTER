@@ -34,6 +34,7 @@ function App() {
   const [scene, setScene] = useState(null);
   const [ambientLight, setAmbientLight] = useState(null);
   const [dirLight, setDirLight] = useState(null);
+  const [isWrapMode,setWrapMode] = useState(false);
 const [assetId, setAssetId] = useState("Novo Projeto"); // Estado para o ID do asset atual
   const updateComposition = useCallback(() => {
     if (layers.length > 0 && finalCompositionRef.current) {
@@ -347,7 +348,8 @@ useEffect(() => {
         handleClear={handleClear}
         setIsBucketMode={setIsBucketMode}
         setIsEraser={setIsEraser}
-
+        isWrapMode={isWrapMode}
+        setWrapMode={setWrapMode}
         model={uploadedModel}
         lightingMode={lightingMode}
         setLightingMode={setLightingMode}
@@ -374,6 +376,7 @@ useEffect(() => {
         setScene={setScene}
         layers={layers}
         activeLayerId={activeLayerId}
+        isWrapMode={isWrapMode}
         setAmbientLight={setAmbientLight}
         setDirLight={setDirLight}
         finalComposition={finalCompositionRef.current}

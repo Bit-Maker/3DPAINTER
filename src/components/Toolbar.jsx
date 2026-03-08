@@ -12,6 +12,8 @@ const Toolbar = ({
   isEraser,
  isBucketMode,
   setIsEraser,
+  isWrapMode,
+  setWrapMode,
   setIsBucketMode,
   setBrushTexture,
   setIsMirrorEnabled,
@@ -143,7 +145,7 @@ const Toolbar = ({
     Importar do Roblox
   </button>
 </div>
-{/* Exemplo de UI na sua Toolbar */}
+
 <button 
   onClick={() => setIsMirrorEnabled(!isMirrorEnabled)}
   style={{
@@ -154,8 +156,22 @@ const Toolbar = ({
     cursor: 'pointer',
     border: 'none'
   }}
+>  
+    {isMirrorEnabled ? "Espelhamento Ativado" : "Espelhamento desativado"}
+
+</button>
+<button 
+  onClick={() => setWrapMode(!isWrapMode)}
+  style={{
+    backgroundColor: isWrapMode ? '#4CAF50' : '#333',
+    color: 'white',
+    padding: '8px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    border: 'none'
+  }}
 >
-  {isMirrorEnabled ? "🪞 Espelhamento Ativo" : "Standard Mode"}
+  {isWrapMode ? "🔄 Wrap Mode Ativo" : "Standard Mode"}
 </button>
 <div className="lighting-toolbar">
   {Object.keys(lightingProfiles).map((mode) => (
