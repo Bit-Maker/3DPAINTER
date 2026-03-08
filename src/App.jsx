@@ -21,6 +21,7 @@ function App() {
   const [uploadedModel, setUploadedModel] = useState(null);
   const [triggerAutoUV, setTriggerAutoUV] = useState(0);
   const [activeChannel, setActiveChannel] = useState("shirt");
+  const [isMirrorEnabled, setIsMirrorEnabled] = useState(false);
   const [layers, setLayers] = useState([]);
   const [activeLayerId, setActiveLayerId] = useState(null);
   const [triggerTextureUpdate, setTriggerTextureUpdate] = useState(0);
@@ -67,6 +68,8 @@ const toggleBodyPart = (partName) => {
       
     }, 100);
   }
+
+  
 
   const applyImageDataToLayer = useCallback((layerId, channel, imageData) => {
     setLayers((prevLayers) => {
@@ -252,6 +255,8 @@ useEffect(() => {
       <BrushCursor size={brushSize} visible={true} />
 
       <Toolbar
+      setIsMirrorEnabled={setIsMirrorEnabled}
+      isMirrorEnabled={isMirrorEnabled}
         activeChannel={activeChannel}
         setActiveChannel={setActiveChannel}
         brushColor={brushColor}
@@ -303,6 +308,7 @@ useEffect(() => {
         bodyPartsVisibility={bodyPartsVisibility}
         setModel={setUploadedModel}
         saveHistoryAction={saveHistoryAction}
+        isMirrorEnabled={isMirrorEnabled}
         channels={finalCompositionRef.current}
       />
       <Preview importTemplate={importTemplate} setTriggerTextureUpdate={setTriggerTextureUpdate} triggerTextureUpdate={triggerTextureUpdate}  finalComposition={finalCompositionRef.current}/>

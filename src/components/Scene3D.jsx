@@ -22,6 +22,7 @@ const Scene3D = ({
   activeChannel,
   bodyPartsVisibility,
   onUVsExtracted,
+  isMirrorEnabled,
   onModelLoaded,
   onDownloadTexture,
   faceLockMode = false,
@@ -397,7 +398,8 @@ const Scene3D = ({
           brushColor,
           brushOpacity,
           isEraser,
-          x,y
+          x,y,
+          isMirrorEnabled
         );
       } else {
         const hit = intersects[0];
@@ -416,6 +418,7 @@ const Scene3D = ({
           brushOpacity,
           isEraser,
           brushTexture,
+          isMirrorEnabled,
         );
         lastPaintTarget.current = { x, y, objectId: intersect.object.id };
       }

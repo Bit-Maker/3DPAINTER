@@ -24,3 +24,4 @@ export const loadTemplateToCanvas = (ctx, imageUrl) => {
     img.src = imageUrl;
   });
 };
+

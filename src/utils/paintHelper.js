@@ -10,56 +10,62 @@ export const performPaint = (
   opacity,
   isEraser,
   brushTexture,
+  isMirrorEnabled
 ) => {
   if (!ctx) return;
 
-  const calibratedSize = Math.max(size * 0.2, size * 582 * 0.0007);
-  const distancia = Math.sqrt(Math.pow(x - lastX, 2) + Math.pow(y - lastY, 2));
-  ctx.save();
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.lineWidth = calibratedSize;
+  // Função interna para evitar repetição de código
+  const executeDraw = (currX, currY, prevX, prevY) => {
+    const calibratedSize = Math.max(size * 0.2, size * 582 * 0.0007);
+    const distancia = prevX !== null ? Math.sqrt(Math.pow(currX - prevX, 2) + Math.pow(currY - prevY, 2)) : 0;
+    
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = calibratedSize;
 
-  // --- CONFIGURAÇÃO DO SHADOWBLUR (MACIEZ) ---
-  // O valor do blur geralmente fica entre 20% e 50% do tamanho do pincel
-  //ctx.shadowBlur = calibratedSize * 0.3;
-  //ctx.shadowColor = isEraser ? "black" : color; // Cor da "névoa" do pincel
-
-  if (isEraser) {
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.strokeStyle = "rgba(0,0,0,1)";
-    ctx.beginPath();
-    if (lastX !== null && lastY !== null) {
-      ctx.moveTo(lastX, lastY);
-      ctx.lineTo(x, y);
+    if (isEraser) {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.strokeStyle = "rgba(0,0,0,1)";
+      ctx.beginPath();
+      if (prevX !== null && prevY !== null) {
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(currX, currY);
+      } else {
+        ctx.arc(currX, currY, calibratedSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.stroke();
     } else {
-      ctx.arc(x, y, calibratedSize / 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.stroke();
-  } else {
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = opacity;
-
-    if (brushTexture && imageCache[brushTexture]?.isLoaded) {
-      // Para texturas, o shadowBlur cria uma aura ao redor da imagem
-      //drawTexturedLine(ctx, lastX, lastY, x, y, calibratedSize, brushTexture);
-    } else {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = opacity;
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
       ctx.beginPath();
 
-      if (lastX !== null && lastY !== null && distancia < 70) {
-        ctx.moveTo(lastX, lastY);
-        ctx.lineTo(x, y);
+      if (prevX !== null && prevY !== null && distancia < 70) {
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(currX, currY);
         ctx.stroke();
       } else {
-        ctx.arc(x, y, calibratedSize / 2, 0, Math.PI * 2);
+        ctx.arc(currX, currY, calibratedSize / 2, 0, Math.PI * 2);
         ctx.fill();
       }
     }
+    ctx.restore();
+  };
+
+  // 1. Desenho Normal
+  executeDraw(x, y, lastX, lastY);
+
+  // 2. Desenho Espelhado
+  if (isMirrorEnabled) {
+    const canvasWidth = ctx.canvas.width;
+    const mirroredX = canvasWidth - x;
+    const mirroredLastX = lastX !== null ? canvasWidth - lastX : null;
+    
+    executeDraw(mirroredX, y, mirroredLastX, lastY);
   }
-  ctx.restore();
 };
 export const performBucketFill = (
   ctx,
@@ -70,6 +76,7 @@ export const performBucketFill = (
   eraser,
   x,
   y,
+  isMirrorEnabled
 ) => {
   if (!ctx || !face || !geometry) return;
 
@@ -85,7 +92,7 @@ export const performBucketFill = (
     ctx.globalCompositeOperation = "destination-out";
   }
   FloodFill(ctx, x, y, color, 32,eraser);
-
+  if(isMirrorEnabled) FloodFill(ctx, ctx.canvas.width - x, y, color, 32,eraser);
   ctx.restore();
 };
 

@@ -1,5 +1,5 @@
 import "./Toolbar.css";
-
+import { useState } from "react";
 const Toolbar = ({
   activeChannel,
   brushColor,
@@ -13,15 +13,19 @@ const Toolbar = ({
   setIsEraser,
   setIsBucketMode,
   setBrushTexture,
+  setIsMirrorEnabled,
+  isMirrorEnabled,
   handleClear,
   handleUndo,
   handleRedo,
+  importRobloxTemplate,
   model
 }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) setBrushTexture(URL.createObjectURL(file));
   };
+  const [robloxInput, setRobloxInput] = useState("");
 
   return (
     <>
@@ -125,12 +129,30 @@ const Toolbar = ({
             Limpar Tudo
           </button>
         </div>
-        <div className="bodyParts">
-          <label>Partes do corpo</label>
-          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-            {model?.name}
-          </div>
-        </div>
+      <div className="import-roblox">
+  <input 
+    placeholder="ID da Roupa (Ex: 123456)" 
+    value={robloxInput}
+    onChange={(e) => setRobloxInput(e.target.value)}
+  />
+  <button onClick={() => importRobloxTemplate(robloxInput)}>
+    Importar do Roblox
+  </button>
+</div>
+{/* Exemplo de UI na sua Toolbar */}
+<button 
+  onClick={() => setIsMirrorEnabled(!isMirrorEnabled)}
+  style={{
+    backgroundColor: isMirrorEnabled ? '#4CAF50' : '#333',
+    color: 'white',
+    padding: '8px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    border: 'none'
+  }}
+>
+  {isMirrorEnabled ? "🪞 Espelhamento Ativo" : "Standard Mode"}
+</button>
       </div>
     </>
   );
