@@ -35,15 +35,8 @@ function App() {
       setTriggerTextureUpdate((prev) => prev + 1);
     }
   }, [layers]);
-  
-  useEffect(() => {
-    updateComposition();
-  }, [updateComposition]);
-
 
   const handleModelLoaded = (parts) => {
-  // parts será um array com os nomes dos meshes, ex: ["Head", "Torso", "LeftArm"...]
-  console.log("Model parts loaded:", parts);
   const initialState = {};
   parts.forEach(part => {
     if (part.name !== "Head") {

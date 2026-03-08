@@ -40,7 +40,7 @@ const Scene3D = ({
   const requestRef = useRef(null);
   const textureRef = useRef(null);
   const beforeImageData = useRef(null);
-const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
+  const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
   const updateUVOverlay = (sceneObject) => {
     if (!onUVsExtracted) return;
     const allLines = [];
@@ -53,30 +53,37 @@ const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
     onUVsExtracted(allLines);
   };
 
-      // Receba bodyPartsVisibility como prop no Scene3D
-useEffect(() => {
-  if (modelRef.current && bodyPartsVisibility) {
-    modelRef.current.traverse((child) => {
-      if (child.isMesh && bodyPartsVisibility[child.name] !== undefined) {
-        // Liga ou desliga a visibilidade do mesh no Three.js
-        child.visible = bodyPartsVisibility[child.name];
-      }
-    });
-  }
-}, [bodyPartsVisibility]); // Executa sempre que você clica no olhinho na interface
+  // Receba bodyPartsVisibility como prop no Scene3D
+  useEffect(() => {
+    if (modelRef.current && bodyPartsVisibility) {
+      modelRef.current.traverse((child) => {
+        if (child.isMesh && bodyPartsVisibility[child.name] !== undefined) {
+          // Liga ou desliga a visibilidade do mesh no Three.js
+          child.visible = bodyPartsVisibility[child.name];
+        }
+      });
+    }
+  }, [bodyPartsVisibility]); // Executa sempre que você clica no olhinho na interface
 
   const applyTexturesToModel = () => {
     if (!modelRef.current || !finalComposition) return;
     const shirtCtx = finalComposition.shirt?.ctx;
     const pantsCtx = finalComposition.pants?.ctx;
     const finalShirtCanvas = createNewCanvas("rgb(255, 219, 141)", 585, 559);
-    finalShirtCanvas.ctx.drawImage(shirtCtx ? shirtCtx.canvas : finalShirtCanvas.canvas, 0, 0);
+    finalShirtCanvas.ctx.drawImage(
+      shirtCtx ? shirtCtx.canvas : finalShirtCanvas.canvas,
+      0,
+      0,
+    );
     const finalPantsCanvas = createNewCanvas("rgb(255, 219, 141)", 585, 559);
-    finalPantsCanvas.ctx.drawImage(pantsCtx ? pantsCtx.canvas : finalPantsCanvas.canvas, 0, 0);
+    finalPantsCanvas.ctx.drawImage(
+      pantsCtx ? pantsCtx.canvas : finalPantsCanvas.canvas,
+      0,
+      0,
+    );
 
     const shirtTexture = new THREE.CanvasTexture(finalShirtCanvas.canvas);
     const pantsTexture = new THREE.CanvasTexture(finalPantsCanvas.canvas);
-    
 
     [shirtTexture, pantsTexture].forEach((tex) => {
       tex.magFilter = THREE.NearestFilter;
@@ -85,8 +92,6 @@ useEffect(() => {
       tex.needsUpdate = true;
     });
 
-
-
     modelRef.current.traverse((child) => {
       if (child.isMesh) {
         const name = child.name.toLowerCase();
@@ -94,13 +99,12 @@ useEffect(() => {
         if (child.material) {
           child.material = child.material.clone();
           child.material = new THREE.MeshBasicMaterial({
-  map: isPants ? pantsTexture : shirtTexture,
-  side: THREE.DoubleSide,
-  transparent: true,
-  alphaTest: 0.05
-});
+            map: isPants ? pantsTexture : shirtTexture,
+            side: THREE.DoubleSide,
+            transparent: true,
+            alphaTest: 0.05,
+          });
         }
-
 
         if (isPants) {
           child.material.map = pantsTexture;
@@ -338,12 +342,15 @@ useEffect(() => {
     mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
     raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
     const objectsToTest = [];
-  modelRef.current.traverse((child) => {
-    if (child.isMesh && child.visible) {
-      objectsToTest.push(child);
-    }
-  });
-    const intersects = raycasterRef.current.intersectObjects(objectsToTest, false);
+    modelRef.current.traverse((child) => {
+      if (child.isMesh && child.visible) {
+        objectsToTest.push(child);
+      }
+    });
+    const intersects = raycasterRef.current.intersectObjects(
+      objectsToTest,
+      false,
+    );
 
     if (intersects.length > 0 && intersects[0].uv) {
       const intersect = intersects[0];
@@ -352,7 +359,8 @@ useEffect(() => {
       if (meshName.includes("leg")) {
         targetChannel = "pants";
       }
-       const isSameMember = lastPaintTarget.current.objectId === intersect.object.id; 
+      const isSameMember =
+        lastPaintTarget.current.objectId === intersect.object.id;
       const prevX = isSameMember ? lastPaintTarget.current.x : null;
       const prevY = isSameMember ? lastPaintTarget.current.y : null;
       const channelData = targetLayer.channels[targetChannel];
@@ -384,11 +392,12 @@ useEffect(() => {
       if (isBucketMode) {
         performBucketFill(
           layerCtx,
-          intersect.face, 
+          intersect.face,
           intersect.object.geometry,
           brushColor,
           brushOpacity,
-          isEraser
+          isEraser,
+          x,y
         );
       } else {
         const hit = intersects[0];
@@ -401,7 +410,7 @@ useEffect(() => {
           x,
           y,
           prevX,
-            prevY,
+          prevY,
           brushSize * distanceFactor * pressure,
           brushColor,
           brushOpacity,
@@ -422,12 +431,12 @@ useEffect(() => {
     if (e.button !== 0) return;
     lastPaintTarget.current = { x: null, y: null, objectId: null };
     paint(e); // Pinta o ponto inicial imediatamente
-const activeLayer = layers.find(l => l.id === activeLayerId);
-  if (activeLayer) {
-     const ctx = activeLayer.channels[activeChannel].ctx; // activeChannel é 'shirt' ou 'pants'
-     // Tira a "foto" de como o canvas está antes do risco
-     beforeImageData.current = ctx.getImageData(0, 0, 585, 559);
-  }
+    const activeLayer = layers.find((l) => l.id === activeLayerId);
+    if (activeLayer) {
+      const ctx = activeLayer.channels[activeChannel].ctx; // activeChannel é 'shirt' ou 'pants'
+      // Tira a "foto" de como o canvas está antes do risco
+      beforeImageData.current = ctx.getImageData(0, 0, 585, 559);
+    }
     const onPointerMove = (ev) => {
       if (ev.buttons !== 1) return; // Verifica se o botão esquerdo ainda está pressionado
       paint(ev);
@@ -437,17 +446,22 @@ const activeLayer = layers.find(l => l.id === activeLayerId);
     const onPointerUp = () => {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
-      const activeLayer = layers.find(l => l.id === activeLayerId);
-  if (activeLayer && beforeImageData.current) {
-     const ctx = activeLayer.channels[activeChannel].ctx;
-     const afterImageData = ctx.getImageData(0, 0, 585, 559);
+      const activeLayer = layers.find((l) => l.id === activeLayerId);
+      if (activeLayer && beforeImageData.current) {
+        const ctx = activeLayer.channels[activeChannel].ctx;
+        const afterImageData = ctx.getImageData(0, 0, 585, 559);
 
-     // Envia para o histórico no App.jsx
-     saveHistoryAction(activeLayerId, activeChannel, beforeImageData.current, afterImageData);
-     
-     // Limpa a ref temporária
-     beforeImageData.current = null;
-  }
+        // Envia para o histórico no App.jsx
+        saveHistoryAction(
+          activeLayerId,
+          activeChannel,
+          beforeImageData.current,
+          afterImageData,
+        );
+
+        // Limpa a ref temporária
+        beforeImageData.current = null;
+      }
       onPaintEnd(); // Salva o histórico ou compõe as camadas
     };
 
