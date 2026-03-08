@@ -251,7 +251,8 @@ useEffect(() => {
   };
   }
   initApp();
-}, [updateComposition]); // Executa apenas uma vez ao montar o componente
+  // eslint-disable-next-line
+}, []); // Executa apenas uma vez ao montar o componente
 
 
   useEffect(() => {

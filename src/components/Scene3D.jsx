@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
-import { performPaint, performBucketFill } from "../utils/paintHelper";
+import { performPaint, performBucketFill, performWrapLine } from "../utils/paintHelper";
 import { extractUVLines } from "../utils/uvHelper";
 import { createNewCanvas, loadTemplateToCanvas } from "../utils/canvasHelpers";
 const Scene3D = ({
@@ -16,6 +16,7 @@ const Scene3D = ({
   activeLayerId,
   setModel,
   handleModelLoaded,
+  isWrapMode=true,
   layers,
   saveHistoryAction,
   onPaintEnd,
@@ -407,8 +408,22 @@ const Scene3D = ({
           brushColor,
           brushOpacity,
           isEraser,
-          x,y,
-          isMirrorEnabled
+          x,
+          y,
+          isMirrorEnabled,
+        );
+      } else if (isWrapMode) {
+const pixelY = (1 - intersect.uv.y) * 559;
+        // Executa a linha inteira ao invés do pincel normal
+        performWrapLine(
+          layerCtx,
+          x,
+          pixelY,
+          brushSize,
+          brushColor,
+          brushOpacity,
+          isEraser,
+          activeChannel,
         );
       } else {
         const hit = intersects[0];

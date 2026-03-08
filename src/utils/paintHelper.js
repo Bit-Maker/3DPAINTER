@@ -1,4 +1,3 @@
-const imageCache = {};
 export const performPaint = (
   ctx,
   x,
@@ -96,6 +95,49 @@ export const performBucketFill = (
   ctx.restore();
 };
 
+export const performWrapLine = (
+  ctx,
+  x,
+  y, // Só precisamos do Y onde o usuário clicou
+  size,
+  color,
+  opacity,
+  isEraser,
+  channel // "shirt" ou "pants" para evitar conflitos de perna/braço
+) => {
+  if (!ctx) return;
+
+  // 1. Descobre em qual parte do corpo o usuário clicou
+  const zone = getZoneByY(x,y);
+  
+  if (!zone) return; // Se clicou fora de uma área válida, ignora
+
+  const calibratedSize = Math.max(size * 0.2, size * 582 * 0.0007);
+
+  ctx.save();
+  ctx.lineCap = "square"; // "square" é melhor que "round" para as bordas conectarem certinho nas costuras
+  ctx.lineJoin = "miter";
+  ctx.lineWidth = calibratedSize;
+
+  if (isEraser) {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.strokeStyle = "rgba(0,0,0,1)";
+  } else {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = opacity;
+    ctx.strokeStyle = color;
+  }
+
+  // 2. Desenha a linha reta de ponta a ponta na zona
+  ctx.beginPath();
+  ctx.moveTo(zone.minX, y);
+  ctx.lineTo(zone.maxX, y);
+  ctx.stroke();
+
+  ctx.restore();
+};
+
+
 export const FloodFill = (ctx, x, y, fillColor, tolerance = 32, isEraser) => {
   const canvasWidth = ctx.canvas.width;
   const canvasHeight = ctx.canvas.height;
@@ -181,4 +223,20 @@ const hexToRgb = (hex) => {
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   return { r, g, b, a: 255 }; // Alpha 255 = 100% opaco
+};
+
+
+// Valores aproximados do template padrão do Roblox (585x559)
+const ROBLOX_ZONES = [
+  { id: "torso", minX: 163, maxX: 555, minY: 7, maxY: 270 },
+  { id: "right_arm", minX: 17, maxX: 280, minY: 288, maxY: 500 },
+  { id: "left_arm", minX: 305, maxX: 570, minY: 288, maxY: 500 },
+  // Se for usar no canal de calças (Pants)
+  { id: "right_leg", minX: 144, maxX: 404, minY: 72, maxY: 204 }, 
+  { id: "left_leg", minX: 144, maxX: 404, minY: 224, maxY: 356 },
+];
+
+const getZoneByY = (x,y) => {
+  // Retorna a zona em que o mouse clicou baseado na altura (Y)
+  return ROBLOX_ZONES.find(zone => y >= zone.minY && y <= zone.maxY && zone.minX <= x && zone.maxX >= x);
 };
