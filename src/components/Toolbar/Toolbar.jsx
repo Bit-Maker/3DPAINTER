@@ -29,6 +29,8 @@ const Toolbar = ({
   importRobloxTemplate,
   isEyedropper,
   setIsEyedropper,
+  isAnimating,
+  setIsAnimating,
 }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -183,7 +185,6 @@ const Toolbar = ({
 >
   {isWrapMode ? "🔄 Wrap Mode Ativo" : "Standard Mode"}
 </button>
-// Adicione junto com os botões de Pincel, Balde e Borracha
 <button 
   className={`tool-btn ${isEyedropper ? 'active' : ''}`}
   onClick={() => {
@@ -216,6 +217,12 @@ const Toolbar = ({
       {mode === 'studio' && '🛠️'}
     </button>
   ))}
+  <button 
+  onClick={() => setIsAnimating(!isAnimating)}
+  className={"playPauseBtn"}
+>
+  {isAnimating ? "⏸️ Pausar Animação" : "▶️ Play Animação"}
+</button>
 </div>
       </div>
     </>

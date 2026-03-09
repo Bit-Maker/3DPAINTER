@@ -33,7 +33,8 @@ const Scene3D = ({
   faceLockMode = false,
   triggerTextureUpdate,
   isBucketMode,
-  setActiveChannel
+  setActiveChannel,
+  isAnimating,
 }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -48,6 +49,9 @@ const Scene3D = ({
   const textureRef = useRef(null);
   const beforeImageData = useRef(null);
   const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
+  const mixerRef = useRef(null); // Controla as animações
+  const clockRef = useRef(new THREE.Clock()); // Necessário para calcular o tempo da animação
+
   const updateUVOverlay = (sceneObject) => {
     if (!onUVsExtracted) return;
     const allLines = [];
@@ -150,6 +154,84 @@ const Scene3D = ({
     controlsRef.current.update();
   };
 
+
+  const animate = () => {
+  requestRef.current = requestAnimationFrame(animate);
+
+  if (modelRef.current) {
+    // Pegamos o tempo decorrido para a matemática senoidal
+    const t = clockRef.current.getElapsedTime();
+
+    if (isAnimating) {
+      modelRef.current.traverse((child) => {
+        if (child.isMesh) {
+          const name = child.name.toLowerCase();
+
+          // --- LÓGICA DE MOVIMENTO R6 (Respirar + Balanço) ---
+
+          // 1. TORSO: O centro do movimento
+          if (name.includes("torso")) {
+            // Sobe e desce (Respiração)
+            child.position.y = Math.sin(t * 1.5) * 0.02;
+            // Balanço lateral suave (Weight Shift)
+            child.rotation.z = Math.sin(t * 0.8) * 0.02;
+            // Inclinação leve para frente/trás
+            child.rotation.x = 0.05 + Math.sin(t * 1.5) * 0.01;
+          }
+
+          // 2. HEAD: Segue o corpo mas tenta estabilizar o olhar
+          if (name.includes("head")) {
+            child.position.y = Math.sin(t * 1.5) * 0.025;
+            child.rotation.z = -Math.sin(t * 0.8) * 0.01; // Contra-balanço
+            child.rotation.y = Math.sin(t * 0.5) * 0.05;  // Olha levemente pros lados
+          }
+
+          // 3. ARMS: Pêndulo lateral e frontal
+          if (name.includes("arm")) {
+            const side = name.includes("left") ? 1 : -1;
+            // Abre e fecha a axila levemente
+           child.rotation.z = (Math.sin(t * 1.5) * 0.03 + 0.02) * side;
+            // Balanço frontal (atrasado em relação ao corpo)
+            child.rotation.x = Math.sin(t * 0.8 + (side * 0.5)) * 0.01;
+            // Acompanha a altura do torso
+            child.position.y = Math.sin(t * 1.5) * 0.02;
+          }
+
+          // 4. LEGS: Mantêm a base fixa mas giram conforme o quadril
+          if (name.includes("leg")) {
+            child.rotation.z = -Math.sin(t * 0.8) * 0.01;
+          }
+        }
+      });
+    } else {
+      // --- LÓGICA DE PAUSE (Reset de Pose) ---
+      // Quando pausado, o modelo volta para a pose estática perfeita para pintura
+      modelRef.current.traverse((child) => {
+        if (child.isMesh) {
+          // Reset suave: você pode usar um lerp aqui se quiser que ele "deslize" para o zero
+          child.rotation.set(0, 0, 0);
+          child.position.set(0, 0, 0);
+        }
+      });
+    }
+  }
+
+  // Atualiza controles de câmera (OrbitControls)
+  if (controlsRef.current) {
+    controlsRef.current.update();
+  }
+
+  // Força atualização da textura se houver pintura ativa
+  if (textureRef.current) {
+    textureRef.current.needsUpdate = true;
+  }
+
+  // Renderiza a cena final
+  if (rendererRef.current && sceneRef.current && cameraRef.current) {
+    rendererRef.current.render(sceneRef.current, cameraRef.current);
+  }
+};
+
   // 1. Inicialização da Cena (Roda apenas uma vez)
   useEffect(() => {
     const mountNode = mountRef.current;
@@ -172,30 +254,28 @@ const Scene3D = ({
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.outputColorSpace = THREE.LinearSRGBColorSpace; // Ou THREE.NoColorSpace em versões recentes
-    renderer.toneMapping = THREE.NoToneMapping; // Impede que o renderer mude o brilho/contraste
+    renderer.outputColorSpace = THREE.LinearSRGBColorSpace; 
+    renderer.toneMapping = THREE.NoToneMapping; 
     mountNode.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.mouseButtons = {
-      LEFT: null, // Desativa o botão esquerdo para a câmera
+      LEFT: null, 
       MIDDLE: THREE.MOUSE.DOLLY,
       RIGHT: THREE.MOUSE.ROTATE,
     };
     controlsRef.current = controls;
 
-    // Iluminação forte e plana para ver as texturas claramente
     scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-    setScene(scene); // Passa a cena para o App.jsx
+    setScene(scene); 
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
     dirLight.position.set(0, 0, 10);
     scene.add(dirLight);
     setAmbientLight(scene.children.find((c) => c.isAmbientLight));
     setDirLight(dirLight);
 
-    // Material Simples (MeshBasicMaterial = Sem sombras/reflexos, ideal para 2D clássico)
     materialRef.current = new THREE.MeshBasicMaterial({
       side: THREE.DoubleSide,
       transparent: true,
@@ -204,7 +284,6 @@ const Scene3D = ({
     if (layers.length > 1) {
       const baseLayer = layers[0];
 
-      // Carrega o template de Camisa no canal shirt
       if (baseLayer.channels.shirt?.ctx) {
         loadTemplateToCanvas(
           baseLayer.channels.shirt.ctx,
@@ -221,21 +300,6 @@ const Scene3D = ({
       }
     }
 
-    // Loop de Animação
-    const animate = () => {
-      requestRef.current = requestAnimationFrame(animate);
-
-      if (controlsRef.current) controlsRef.current.update();
-
-      // ATUALIZAÇÃO 60FPS: Se o modo pintura estiver ativo e a textura existir, força o update
-      if (textureRef.current) {
-        textureRef.current.needsUpdate = true;
-      }
-
-      if (rendererRef.current && sceneRef.current && cameraRef.current) {
-        rendererRef.current.render(sceneRef.current, cameraRef.current);
-      }
-    };
     animate();
 
     const handleResize = () => {
@@ -258,7 +322,6 @@ const Scene3D = ({
     // eslint-disable-next-line
   }, []);
 
-  // 2. Atualização da Textura Baseada no Canvas
   useEffect(() => {
     if (!finalComposition?.albedo || !materialRef.current) return;
 
@@ -270,7 +333,6 @@ const Scene3D = ({
       textureRef.current = tex;
       materialRef.current.map = tex;
     } else {
-      // Se a referência do canvas mudar, atualizamos a imagem e forçamos o update
       if (textureRef.current.image !== canvas) {
         textureRef.current.image = canvas;
       }
@@ -279,15 +341,37 @@ const Scene3D = ({
     materialRef.current.needsUpdate = true;
   }, [finalComposition]);
 
-  // 3. Carregamento do Modelo
+
+  useEffect(() => {
+  animate();
+  return () => {
+    if (requestRef.current) {
+      cancelAnimationFrame(requestRef.current);
+    }
+  };
+  // eslint-disable-next-line 
+}, [isAnimating]); 
+
   useEffect(() => {
     if (sceneRef.current && !uploadedModel) {
       const loader = new OBJLoader();
-      const modelPath = "/models/avatar.obj"; // Certifique-se que o arquivo está em public/models/
+      const modelPath = "/models/avatar.obj"; 
       loader.load(
         modelPath,
         (object) => {
           if (modelRef.current) sceneRef.current.remove(modelRef.current);
+
+          const model = object.scene;
+      
+      // 1. Configurar Animação
+      if (object.animations && object.animations.length) {
+        mixerRef.current = new THREE.AnimationMixer(model);
+        // Toca a primeira animação encontrada no arquivo (geralmente a Idle)
+        const action = mixerRef.current.clipAction(object.animations[0]);
+        action.play();
+      }
+
+
 
           const box = new THREE.Box3().setFromObject(object);
           const center = box.getCenter(new THREE.Vector3());

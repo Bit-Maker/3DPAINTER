@@ -38,6 +38,7 @@ function App() {
   const [isWrapMode, setWrapMode] = useState(false);
   const [assetId, setAssetId] = useState("Novo Projeto"); // Estado para o ID do asset atual
   const [isEyedropper, setIsEyedropper] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const updateComposition = useCallback(() => {
     if (layers.length > 0 && finalCompositionRef.current) {
       composeLayers(layers, finalCompositionRef.current);
@@ -151,6 +152,7 @@ function App() {
       l.id === id ? { ...l, opacity: opacity } : l,
     );
     setLayers(newLayers);
+    updateComposition()
   };
 
   const handleAddLayer = () => {
@@ -270,7 +272,7 @@ function App() {
         setLayers([baseLayer]);
         setActiveLayerId(baseLayer.id);
 
-        setTimeout(() => updateComposition(), 200);
+        setTimeout(() => updateComposition(), 500);
       }
     };
     initApp();
@@ -383,6 +385,8 @@ function App() {
         handleAutoUV={() => setTriggerAutoUV((p) => p + 1)}
         isEyedropper={isEyedropper}
         setIsEyedropper={setIsEyedropper}
+        isAnimating={isAnimating}
+        setIsAnimating={setIsAnimating}
       />
 
       <LayerPanel
@@ -429,6 +433,7 @@ function App() {
         isMirrorEnabled={isMirrorEnabled}
         setLightingMode={setLightingMode}
         channels={finalCompositionRef.current}
+        isAnimating={isAnimating}
       />
       <Preview
         importTemplate={importTemplate}
