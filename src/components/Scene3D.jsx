@@ -5,6 +5,7 @@ import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 import { performPaint, performBucketFill, performWrapLine } from "../utils/paintHelper";
 import { extractUVLines } from "../utils/uvHelper";
 import { createNewCanvas, loadTemplateToCanvas } from "../utils/canvasHelpers";
+import { applyAutomaticShading } from "../utils/shadingHelper";
 const Scene3D = ({
   brushColor,
   brushSize,
@@ -35,6 +36,7 @@ const Scene3D = ({
   isBucketMode,
   setActiveChannel,
   isAnimating,
+  isCameraMode
 }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -76,7 +78,7 @@ const Scene3D = ({
     }
   }, [bodyPartsVisibility]); // Executa sempre que você clica no olhinho na interface
 
-  const applyTexturesToModel = () => {
+  const applyTexturesToModel = async () => {
     if (!modelRef.current || !finalComposition) return;
     const shirtCtx = finalComposition.shirt?.ctx;
     const pantsCtx = finalComposition.pants?.ctx;
@@ -93,8 +95,11 @@ const Scene3D = ({
       0,
     );
 
-    const shirtTexture = new THREE.CanvasTexture(finalShirtCanvas.canvas);
-    const pantsTexture = new THREE.CanvasTexture(finalPantsCanvas.canvas);
+    const shadedShirt = await applyAutomaticShading(finalShirtCanvas.canvas, 0.8);
+  const shadedPants = await applyAutomaticShading(finalPantsCanvas.canvas, 0.8);
+
+    const shirtTexture = new THREE.CanvasTexture(shadedShirt);
+    const pantsTexture = new THREE.CanvasTexture(shadedPants);
 
     [shirtTexture, pantsTexture].forEach((tex) => {
       tex.magFilter = THREE.NearestFilter;
@@ -130,6 +135,20 @@ const Scene3D = ({
       }
     });
   };
+
+  useEffect(() => {
+  if (controlsRef.current) {
+    if (isCameraMode) {
+      // MODO CÂMERA: 1 dedo rotaciona, Mouse Esquerdo rotaciona
+      controlsRef.current.touches.ONE = THREE.TOUCH.ROTATE;
+      controlsRef.current.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+    } else {
+      // MODO PINTURA: 1 dedo NÃO move a câmera, Mouse Esquerdo NÃO move a câmera
+      controlsRef.current.touches.ONE = null;
+      controlsRef.current.mouseButtons.LEFT = null;
+    }
+  }
+}, [isCameraMode]);
 
   useEffect(() => {
     applyTexturesToModel();
@@ -383,7 +402,7 @@ const Scene3D = ({
           object.scale.set(scale, scale, scale);
           const parts = [];
           setTimeout(() => {
-            object.traverse((child) => {
+            object.traverse(async (child) => {
               if (
                 child.isMesh &&
                 finalComposition &&
@@ -392,6 +411,7 @@ const Scene3D = ({
               ) {
                 const name = child.name.toLowerCase();
                 parts.push(child.name); // Pega o nome de cada membro
+
                 const shirtTex = new THREE.CanvasTexture(
                   finalComposition.shirt.canvas,
                 );
@@ -543,7 +563,7 @@ const pixelY = (1 - intersect.uv.y) * 559;
 
   // 5. Gerenciamento de Eventos de Mouse/Touch
   const handlePointerDown = (e) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || isCameraMode) return;
     lastPaintTarget.current = { x: null, y: null, objectId: null };
     paint(e); // Pinta o ponto inicial imediatamente
     const activeLayer = layers.find((l) => l.id === activeLayerId);

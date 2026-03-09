@@ -39,6 +39,7 @@ function App() {
   const [assetId, setAssetId] = useState("Novo Projeto"); // Estado para o ID do asset atual
   const [isEyedropper, setIsEyedropper] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isCameraMode, setIsCameraMode] = useState(false);
   const updateComposition = useCallback(() => {
     if (layers.length > 0 && finalCompositionRef.current) {
       composeLayers(layers, finalCompositionRef.current);
@@ -387,6 +388,8 @@ function App() {
         setIsEyedropper={setIsEyedropper}
         isAnimating={isAnimating}
         setIsAnimating={setIsAnimating}
+        isCameraMode={isCameraMode}
+        setIsCameraMode={setIsCameraMode}
       />
 
       <LayerPanel
@@ -434,6 +437,8 @@ function App() {
         setLightingMode={setLightingMode}
         channels={finalCompositionRef.current}
         isAnimating={isAnimating}
+        isCameraMode={isCameraMode}
+
       />
       <Preview
         importTemplate={importTemplate}

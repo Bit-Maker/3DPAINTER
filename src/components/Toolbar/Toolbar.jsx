@@ -31,6 +31,8 @@ const Toolbar = ({
   setIsEyedropper,
   isAnimating,
   setIsAnimating,
+  isCameraMode,
+  setIsCameraMode
 }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -56,6 +58,22 @@ const Toolbar = ({
             value={brushSize}
             onChange={(e) => setBrushSize(parseInt(e.target.value))}
           />
+
+          // Na sua interface (Toolbar), crie o botão:
+<button 
+  className={isCameraMode ? "active" : ""}
+   style={{
+              background: isCameraMode ? "#ffeb3b" : "#444",
+              color: isCameraMode ? "#000" : "#fff",
+              marginBottom: "10px",
+            }}
+  onClick={() => {
+    setIsCameraMode(!isCameraMode);
+    // opcional: desative outras ferramentas aqui, se necessário
+  }}
+>
+  🎥 Mover Câmera
+</button>
 
           <div
             style={{
