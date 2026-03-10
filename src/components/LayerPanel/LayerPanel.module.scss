@@ -1,31 +1,48 @@
 
 .uipanel {
   position: fixed;
-  z-index: 10;
-  right: 0vw;
+  z-index: 11;
+  right: 1vw;
   bottom: 0vh;
   width: 20vw;
   height: 50vh;
   display: flex;
-  z-index: 11;
+  background-color: rgba(43, 43, 43, 0.8);
   overflow-y: auto;
   flex-direction: column;
-  gap: 1.5rem;
+}
+.title {
+  text-align: center;
+}
+.addLayer {
+  background-color: rgba(0,200,0,1);
+  color: white;
+  border: solid white 1px;
+}
+.btnStyle {
+  max-width: 3vw;
+  background-color: rgba(50,50,50,1);
+  color: white;
+  text-align: center;
 }
 .layerList {
   display: flex;
   flex-direction: column-reverse;
-  gap: 5px;
   overflow-y: auto;
 }
 
-.layerItem {
-  padding: 10px;
+.layer {
+  padding: 1px;
   background-color: #333;
   border: 1px solid transparent;
   border-radius: 6px;
-  margin-bottom: 5px;
+  width: 100%;
+  margin-bottom: 1px;
   cursor: pointer;
+  input[type="range"] {
+    width: 3px; /* Largura total */
+    cursor: pointer;
+}
 }
 .layerItem.active {
   background-color: #444;

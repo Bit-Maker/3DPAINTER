@@ -29,8 +29,8 @@ const LayerPanel = ({
 
   return (
     <div className={styles.uipanel}>
-      <h3>Camadas</h3>
-      <button onClick={addLayer} style={{ marginBottom: "10px", width: "100%", padding: "8px", background: "#4CAF50", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
+      <h3 className={styles.title}>Camadas</h3>
+      <button onClick={addLayer} className={styles.addLayer}>
         + Nova Camada
       </button>
 
@@ -39,14 +39,7 @@ const LayerPanel = ({
           <div
             key={layer.id}
             onClick={() => setActiveLayerId(layer.id)}
-            style={{
-              padding: "10px",
-              backgroundColor: activeLayerId === layer.id ? "#444" : "#333",
-              border: activeLayerId === layer.id ? "1px solid #4CAF50" : "1px solid transparent",
-              borderRadius: "6px",
-              marginBottom: "5px",
-              cursor: "pointer"
-            }}
+            className={styles.layer}
           >
             {/* Linha Superior: Preview e Opacidade */}
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
@@ -71,21 +64,21 @@ const LayerPanel = ({
               <div style={{ display: "flex", gap: "5px" }}>
                 <button 
                   onClick={(e) => { e.stopPropagation(); deleteLayer(layer.id); }}
-                  style={btnStyle}
+                  className={styles.btnStyle}
                 >
-                  Delete
+                  X
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); moveLayer(index, -1); }}
                   disabled={index === 0}
-                  style={btnStyle}
+                  className={styles.btnStyle}
                 >
                   ▼
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); moveLayer(index, 1); }}
                   disabled={index === layers.length - 1}
-                  style={btnStyle}
+                  className={styles.btnStyle}
                 >
                   ▲
                 </button>
@@ -96,19 +89,6 @@ const LayerPanel = ({
       </div>
     </div>
   );
-};
-
-// Estilo auxiliar para os botões de seta
-const btnStyle = {
-  background: "#555",
-  color: "white",
-  border: "none",
-  borderRadius: "3px",
-  cursor: "pointer",
-  padding: "2px 6px",
-  fontSize: "10px",
-  opacity: "1",
-  transition: "0.2s"
 };
 
 export default LayerPanel;

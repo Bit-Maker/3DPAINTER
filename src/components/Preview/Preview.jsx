@@ -189,8 +189,6 @@ const startDrawing = (e, type) => {
 
   return (
     <div className={styles.Preview}>
-      <h3>ROBLOX CLASSIC</h3>
-
       <input
         type="file"
         ref={fileInputRef}
@@ -215,14 +213,14 @@ const startDrawing = (e, type) => {
               onPointerUp={(e) => stopDrawing(e, "shirt")}
               onPointerLeave={(e) => stopDrawing(e, "shirt")}
             />
-            <div className={styles.overlayActions}>
-              <button onClick={() => handleImportClick("shirt")}>Importar</button>
-            </div>
           </div>
-          <button className={styles.downloadBtn} onClick={() => downloadTexture("shirt")}>
-            Baixar Camisa
-          </button>
         </div>
+            <div className={styles.overlayActions}>
+              <button className={styles.downloadBtn} onClick={() => handleImportClick("shirt")}>Importar</button>
+              <button className={styles.downloadBtn} onClick={() => downloadTexture("shirt")}>
+                Baixar Camisa
+              </button>
+            </div>
 
         {/* PANTS */}
         <div className={styles.previewBox}>
@@ -239,14 +237,14 @@ const startDrawing = (e, type) => {
               onPointerUp={(e) => stopDrawing(e, "pants")}
               onPointerLeave={(e) => stopDrawing(e, "pants")}
             />
-            <div className={styles.overlayActions}>
-              <button onClick={() => handleImportClick("pants")}>Importar</button>
-            </div>
           </div>
-          <button className={styles.downloadBtn} onClick={() => downloadTexture("pants")}>
-            Baixar Calça
-          </button>
         </div>
+            <div className={styles.overlayActions}>
+              <button className={styles.downloadBtn} onClick={() => handleImportClick("pants")}>Importar</button>
+              <button className={styles.downloadBtn} onClick={() => downloadTexture("pants")}>
+                Baixar Calça
+              </button>
+            </div>
       </div>
     </div>
   );

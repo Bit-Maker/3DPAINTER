@@ -2,9 +2,9 @@
   position: fixed;
   z-index: 10;
   right: .1vw;
-  top: 0.1vh;
+  top: 10vh;
   display: flex;
-  height: 40vh;
+  height: 30vh;
   width: 15vw;
   flex-direction: column;
   gap: 1.5rem;
@@ -12,14 +12,12 @@
   background: rgba(20, 20, 20, 0.85);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
   color: white;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  max-height: 90vh;
   overflow-y: auto;
 
   h3 {
-    font-size: 0.9rem;
+    font-size: 0.3rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -28,6 +26,17 @@
     padding-bottom: 0.5rem;
     color: #ddd;
   }
+}
+
+.overlayActions {
+  display: flex;
+}
+
+.downloadBtn {
+  width: 10vw;
+  height: 5vw;
+  background-color: #4d4d4dd3;
+  color: white;
 }
 
 .gridContainer {
@@ -44,7 +53,7 @@
   gap: 0.6rem;
 
   span {
-    font-size: 0.75rem;
+    font-size: 0.5rem;
     color: #aaa;
     font-weight: bold;
   }
@@ -59,6 +68,7 @@
 .imageWrapper {
   position: relative;
   width: 200px;
+  max-width: 100%;
   aspect-ratio: 585 / 559;
   background-image:
     linear-gradient(45deg, #2b2b2b 25%, transparent 25%),

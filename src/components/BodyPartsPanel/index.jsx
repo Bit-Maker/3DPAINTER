@@ -1,24 +1,14 @@
-
+import styles from './BodyPartsPanel.module.scss'
 const BodyPartsPanel = ({ visibilityState, togglePart }) => {
   return (
-    <div className="ui-panel" style={{
-      position: "absolute", left: "1vw", top: "70vh", 
-      backgroundColor: "#2a2a2a", padding: "10px", 
-      height: "20vh", overflowY: "auto",
-      borderRadius: "8px", color: "white", width: "150px"
-    }}>
-      <h3 style={{ margin: "0 0 10px 0", fontSize: "14px" }}>Partes do Corpo</h3>
+ 
+    <div className={styles.panel}>
       
-      <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+      <div className={styles.bodyParts}>
         {Object.entries(visibilityState).map(([partName, isVisible]) => (
           <div 
             key={partName} 
-            style={{ 
-              display: "flex", justifyContent: "space-between", 
-              alignItems: "center", padding: "5px",
-              backgroundColor: "#333", borderRadius: "4px",
-              cursor: "pointer", opacity: isVisible ? 1 : 0.5
-            }}
+            className={styles.bodyPart+" "+(isVisible ? styles.visible : styles.hidden)}
             onClick={() => togglePart(partName)}
           >
             <span style={{ fontSize: "12px" }}>{partName}</span>

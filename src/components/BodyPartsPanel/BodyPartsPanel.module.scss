@@ -1,0 +1,39 @@
+.panel {
+    position: fixed;
+    left: 0vw;
+    bottom: 0vh;
+    background-color: #2a2a2a;
+    padding: 10px;
+    height: 20vh;
+    overflow-y: auto;
+    z-index: 1;
+    scrollbar-color: transparent transparent;
+}
+
+.bodyParts {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.hidden {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px;
+    background-color: #333;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.5;
+}
+
+.visible {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px;
+    background-color: #333;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 1;
+}

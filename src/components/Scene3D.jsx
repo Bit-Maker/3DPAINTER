@@ -36,7 +36,7 @@ const Scene3D = ({
   isBucketMode,
   setActiveChannel,
   isAnimating,
-  isCameraMode
+  isPaintMode,
 }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -138,7 +138,7 @@ const Scene3D = ({
 
   useEffect(() => {
   if (controlsRef.current) {
-    if (isCameraMode) {
+    if (!isPaintMode && !isBucketMode && !isEraser && !isWrapMode) {
       // MODO CÂMERA: 1 dedo rotaciona, Mouse Esquerdo rotaciona
       controlsRef.current.touches.ONE = THREE.TOUCH.ROTATE;
       controlsRef.current.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
@@ -148,7 +148,8 @@ const Scene3D = ({
       controlsRef.current.mouseButtons.LEFT = null;
     }
   }
-}, [isCameraMode]);
+  // eslint-disable-next-line
+}, [isPaintMode,isBucketMode,isEraser]);
 
   useEffect(() => {
     applyTexturesToModel();
@@ -563,7 +564,7 @@ const pixelY = (1 - intersect.uv.y) * 559;
 
   // 5. Gerenciamento de Eventos de Mouse/Touch
   const handlePointerDown = (e) => {
-    if (e.button !== 0 || isCameraMode) return;
+    if (e.button !== 0 || (!isPaintMode && !isBucketMode && !isEraser && !isWrapMode)) return;
     lastPaintTarget.current = { x: null, y: null, objectId: null };
     paint(e); // Pinta o ponto inicial imediatamente
     const activeLayer = layers.find((l) => l.id === activeLayerId);

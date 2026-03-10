@@ -1,0 +1,62 @@
+.toolbar {
+  position: fixed;
+  top: 0;
+  width: 100vw;
+  z-index:1;
+  height: 10vh;
+  background-color: rgba(59, 59, 59, 0.8);
+  display: flex;
+ padding-top: 0vh;
+  justify-content: space-evenly;
+  
+  div {
+  }
+}
+
+.toolBtn {
+  background-color: #4e4e4e00;
+  color: white;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  width: 4vw;
+  height: 4vw;
+  font-size: 18px;
+  align-self: auto;
+}
+
+.input {
+  width: 8vw;
+}
+
+.active {
+  background-color: #4e4e4e38;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  background-color: rgba(22, 22, 22, 0);
+  width: 6vw;
+  label {
+    font-size: 12px;
+    color: #fff;
+  }
+}
+
+.lightingtoolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.title {
+  font-size: 18px;
+  color: #fff;
+  background-color: red;
+  left: 0;
+  position: fixed;
+}

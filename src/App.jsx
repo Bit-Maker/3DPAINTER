@@ -10,7 +10,7 @@ import BodyPartsPanel from "./components/BodyPartsPanel";
 import Preview from "./components/Preview/Preview";
 import { loadTemplateToCanvas } from "./utils/canvasHelpers";
 import { serializeLayers } from "./utils/save";
-
+import LeftToolbar from "./components/LeftToolBar/LeftToolbar";
 function App() {
   const [brushColor, setBrushColor] = useState("#000000");
   const [BodyColor, setBodyColor] = useState("#ffd78b");
@@ -39,7 +39,12 @@ function App() {
   const [assetId, setAssetId] = useState("Novo Projeto"); // Estado para o ID do asset atual
   const [isEyedropper, setIsEyedropper] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isCameraMode, setIsCameraMode] = useState(false);
+  const [isPaintMode, setIsPaintMode] = useState(false);
+
+
+
+
+  
   const updateComposition = useCallback(() => {
     if (layers.length > 0 && finalCompositionRef.current) {
       composeLayers(layers, finalCompositionRef.current);
@@ -388,8 +393,45 @@ function App() {
         setIsEyedropper={setIsEyedropper}
         isAnimating={isAnimating}
         setIsAnimating={setIsAnimating}
-        isCameraMode={isCameraMode}
-        setIsCameraMode={setIsCameraMode}
+      />
+      <LeftToolbar
+        scene={scene}
+        isPaintMode={isPaintMode}
+        setIsPaintMode={setIsPaintMode}
+        myAmbLight={ambientLight}
+        myDirLight={dirLight}
+        setIsMirrorEnabled={setIsMirrorEnabled}
+        isMirrorEnabled={isMirrorEnabled}
+        activeChannel={activeChannel}
+        setActiveChannel={setActiveChannel}
+        brushColor={brushColor}
+        setBrushColor={setBrushColor}
+        brushSize={brushSize}
+        setBrushSize={setBrushSize}
+        brushOpacity={brushOpacity}
+        setBrushOpacity={setBrushOpacity}
+        isEraser={isEraser}
+        handleUndo={handleUndo}
+        handleRedo={handleRedo}
+        bodyColor={BodyColor}
+        setBodyColor={setBodyColor}
+        isBucketMode={isBucketMode}
+        handleClear={handleClear}
+        setIsBucketMode={setIsBucketMode}
+        setIsEraser={setIsEraser}
+        isWrapMode={isWrapMode}
+        setWrapMode={setWrapMode}
+        model={uploadedModel}
+        lightingMode={lightingMode}
+        setLightingMode={setLightingMode}
+        importRobloxTemplate={importTemplate}
+        setUploadedModel={setUploadedModel}
+        setBrushTexture={setBrushTexture}
+        handleAutoUV={() => setTriggerAutoUV((p) => p + 1)}
+        isEyedropper={isEyedropper}
+        setIsEyedropper={setIsEyedropper}
+        isAnimating={isAnimating}
+        setIsAnimating={setIsAnimating}
       />
 
       <LayerPanel
@@ -437,7 +479,7 @@ function App() {
         setLightingMode={setLightingMode}
         channels={finalCompositionRef.current}
         isAnimating={isAnimating}
-        isCameraMode={isCameraMode}
+        isPaintMode={isPaintMode}
 
       />
       <Preview
