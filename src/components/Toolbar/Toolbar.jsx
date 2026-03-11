@@ -1,4 +1,3 @@
-import styles from "./Toolbar.module.scss";
 import { lightingProfiles, updateSceneLighting } from "../../utils/3DHelper";
 const Toolbar = ({
   brushSize,
@@ -24,7 +23,7 @@ const Toolbar = ({
   <nav className="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary shadow-sm py-2">
     <div className="container-fluid">
       {/* Branding / Logo (Opcional para SEO) */}
-      <a className="navbar-brand d-flex align-items-center" href="#">
+      <a className="navbar-brand d-flex align-items-center" href="/">
         <span className="fs-5 fw-bold">Editor 3D</span>
       </a>
 

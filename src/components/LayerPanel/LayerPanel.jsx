@@ -1,5 +1,3 @@
-import styles from "./LayerPanel.module.scss";
-
 const LayerPanel = ({
   layers,
   activeLayerId,

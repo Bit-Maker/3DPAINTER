@@ -1,4 +1,3 @@
-import styles from './BodyPartsPanel.module.scss'
 import { useState } from 'react';
 const BodyPartsPanel = ({ visibilityState, togglePart }) => {
   const [isPanelExpanded, setIsPanelExpanded] = useState(true);

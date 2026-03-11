@@ -1,4 +1,3 @@
-import styles from "./LeftToolbar.module.scss";
 const LeftToolbar = ({
   brushColor,
   setBrushColor,

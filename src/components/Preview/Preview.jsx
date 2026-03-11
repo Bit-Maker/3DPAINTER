@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import styles from "./Preview.module.scss";
 
 const Preview = ({
   finalComposition,
