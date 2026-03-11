@@ -188,65 +188,88 @@ const startDrawing = (e, type) => {
   };
 
   return (
-    <div className={styles.Preview}>
-      <input
-        type="file"
-        ref={fileInputRef}
-        style={{ display: "none" }}
-        accept="image/png, image/jpeg"
-        onChange={handleFileChange}
-      />
+  <section 
+  className="preview-sidebar position-fixed end-0 m-3 d-flex flex-column gap-3" 
+  style={{ top: '60px', zIndex: 1020, maxWidth: '200px' }}
+  aria-label="Visualização dos Templates"
+>
+  {/* Input de Arquivo Escondido */}
+  <input
+    type="file"
+    ref={fileInputRef}
+    className="d-none"
+    accept="image/png, image/jpeg"
+    onChange={handleFileChange}
+  />
 
-      <div className={styles.gridContainer}>
-        {/* SHIRT */}
-        <div className={styles.previewBox}>
-          <span className={styles.label}>SHIRT TEMPLATE</span>
-          <div className={styles.imageWrapper}>
-            <canvas
-              ref={shirtCanvasRef}
-              width={585}
-              height={559}
-              className={styles.previewImage}
-              style={{ cursor: "crosshair", touchAction: "none" }}
-              onPointerDown={(e) => startDrawing(e, "shirt")}
-              onPointerMove={(e) => draw(e, "shirt")}
-              onPointerUp={(e) => stopDrawing(e, "shirt")}
-              onPointerLeave={(e) => stopDrawing(e, "shirt")}
-            />
-          </div>
-        </div>
-            <div className={styles.overlayActions}>
-              <button className={styles.downloadBtn} onClick={() => handleImportClick("shirt")}>Importar</button>
-              <button className={styles.downloadBtn} onClick={() => downloadTexture("shirt")}>
-                Baixar Camisa
-              </button>
-            </div>
-
-        {/* PANTS */}
-        <div className={styles.previewBox}>
-          <span className={styles.label}>PANTS TEMPLATE</span>
-          <div className={styles.imageWrapper}>
-            <canvas
-              ref={pantsCanvasRef}
-              width={585}
-              height={559}
-              className={styles.previewImage}
-              style={{ cursor: "crosshair", touchAction: "none" }}
-              onPointerDown={(e) => startDrawing(e, "pants")}
-              onPointerMove={(e) => draw(e, "pants")}
-              onPointerUp={(e) => stopDrawing(e, "pants")}
-              onPointerLeave={(e) => stopDrawing(e, "pants")}
-            />
-          </div>
-        </div>
-            <div className={styles.overlayActions}>
-              <button className={styles.downloadBtn} onClick={() => handleImportClick("pants")}>Importar</button>
-              <button className={styles.downloadBtn} onClick={() => downloadTexture("pants")}>
-                Baixar Calça
-              </button>
-            </div>
-      </div>
+  {/* Template: SHIRT */}
+  <article className="card bg-dark border-secondary shadow">
+    <header className="card-header py-1 border-secondary bg-black bg-opacity-25 text-center">
+      <span className="fw-bold text-uppercase" style={{ fontSize: '10px', letterSpacing: '1px' }}>Shirt Template</span>
+    </header>
+    
+    <div className="card-body p-1">
+      <figure className="m-0 border border-secondary rounded overflow-hidden bg-white">
+        <canvas
+          ref={shirtCanvasRef}
+          width={585}
+          height={559}
+          className="img-fluid d-block"
+          style={{ cursor: "crosshair", touchAction: "none" }}
+          onPointerDown={(e) => startDrawing(e, "shirt")}
+          onPointerMove={(e) => draw(e, "shirt")}
+          onPointerUp={(e) => stopDrawing(e, "shirt")}
+          onPointerLeave={(e) => stopDrawing(e, "shirt")}
+          role="img"
+          aria-label="Área de desenho da camisa"
+        />
+      </figure>
     </div>
+
+    <footer className="card-footer p-1 d-grid gap-1 border-secondary">
+      <button className="btn btn-xs btn-outline-info" onClick={() => handleImportClick("shirt")}>
+        Importar
+      </button>
+      <button className="btn btn-xs btn-primary" onClick={() => downloadTexture("shirt")}>
+        Baixar Camisa
+      </button>
+    </footer>
+  </article>
+
+  {/* Template: PANTS */}
+  <article className="card bg-dark border-secondary shadow">
+    <header className="card-header py-1 border-secondary bg-black bg-opacity-25 text-center">
+      <span className="fw-bold text-uppercase" style={{ fontSize: '10px', letterSpacing: '1px' }}>Pants Template</span>
+    </header>
+    
+    <div className="card-body p-1">
+      <figure className="m-0 border border-secondary rounded overflow-hidden bg-white">
+        <canvas
+          ref={pantsCanvasRef}
+          width={585}
+          height={559}
+          className="img-fluid d-block"
+          style={{ cursor: "crosshair", touchAction: "none" }}
+          onPointerDown={(e) => startDrawing(e, "pants")}
+          onPointerMove={(e) => draw(e, "pants")}
+          onPointerUp={(e) => stopDrawing(e, "pants")}
+          onPointerLeave={(e) => stopDrawing(e, "pants")}
+          role="img"
+          aria-label="Área de desenho da calça"
+        />
+      </figure>
+    </div>
+
+    <footer className="card-footer p-1 d-grid gap-1 border-secondary">
+      <button className="btn btn-xs btn-outline-info" onClick={() => handleImportClick("pants")}>
+        Importar
+      </button>
+      <button className="btn btn-xs btn-primary" onClick={() => downloadTexture("pants")}>
+        Baixar Calça
+      </button>
+    </footer>
+  </article>
+</section>
   );
 };
 

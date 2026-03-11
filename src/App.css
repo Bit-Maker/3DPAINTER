@@ -39,3 +39,14 @@ body {
   border: 2px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
 }
+
+.btn-xs {
+    padding: 0.1rem 0.3rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    border-radius: 0.2rem;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  background-color: #444; /* Cor do trilho no modo escuro */
+}

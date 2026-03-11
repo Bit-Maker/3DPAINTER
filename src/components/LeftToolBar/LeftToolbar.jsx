@@ -20,99 +20,123 @@ const LeftToolbar = ({
 }) => {
   return (
     <>
-      <div className={styles.toolbar}>
-        <div className={styles.group}>
-          <button
-            className={
-              styles.toolBtn + " " + (isPaintMode ? styles.active : "")
-            }
-            onClick={() => {
-              setIsPaintMode(!isPaintMode);
-              setIsBucketMode(false);
-            }}
-          >
-            Pi
-          </button>
-          <button
-            onClick={() => {
-              setIsEraser(!isEraser);
-            }}
-            className={styles.toolBtn + " " + (isEraser ? styles.active : "")}
-          >
-            B
-          </button>
-          <button
-            onClick={() => {
-              setIsBucketMode(!isBucketMode);
-              setIsPaintMode(false);
-            }}
-            className={
-              styles.toolBtn + " " + (isBucketMode ? styles.active : "")
-            }
-          >
-            🎨
-          </button>
+     <aside  
+  className="bg-dark border-end border-secondary d-flex flex-column align-items-center py-4 vh-100 position-fixed start-1" 
+  style={{ zIndex: 1030,top: '56px' }}
+  aria-label="Barra de Ferramentas de Desenho"
+>
+  <nav className="d-flex flex-column gap-3 w-100 px-2" role="toolbar" aria-orientation="vertical">
+    
+    {/* Grupo de Ferramentas de Pintura */}
+    <div className="d-flex flex-column gap-2 border-bottom border-secondary pb-3" role="group" aria-label="Modos de Pintura">
+      <button
+        type="button"
+        className={`btn btn-sm ${isPaintMode ? 'btn-primary' : 'btn-outline-light'}`}
+        onClick={() => {
+          setIsPaintMode(!isPaintMode);
+          setIsBucketMode(false);
+        }}
+        title="Pincel (P)"
+        aria-pressed={isPaintMode}
+      >
+        <span className="fw-bold">Pi</span>
+      </button>
 
-          <>
-            <input
-                      className={styles.colorInput}
+      <button
+        type="button"
+        className={`btn btn-sm ${isEraser ? 'btn-primary' : 'btn-outline-light'}`}
+        onClick={() => setIsEraser(!isEraser)}
+        title="Borracha (B)"
+        aria-pressed={isEraser}
+      >
+        <span className="fw-bold">B</span>
+      </button>
 
-              type="color"
-              value={brushColor}
-              onChange={(e) => {
-                setBrushColor(e.target.value);
-                setBrushTexture(null);
-              }}
-            />
-          </>
+      <button
+        type="button"
+        className={`btn btn-sm ${isBucketMode ? 'btn-primary' : 'btn-outline-light'}`}
+        onClick={() => {
+          setIsBucketMode(!isBucketMode);
+          setIsPaintMode(false);
+        }}
+        title="Balde de Tinta"
+        aria-pressed={isBucketMode}
+      >
+        🎨
+      </button>
+    </div>
 
-          <input
-          className={styles.colorInput}
-            type="color"
-            value={bodyColor}
-            onChange={(e) => {
-              setBodyColor(e.target.value);
-            }}
-          />
-        {/*    <div className="import-roblox">
-          <input
-            placeholder="ID da Roupa (Ex: 123456)"
-            value={robloxInput}
-            onChange={(e) => setRobloxInput(e.target.value)}
-          />
-          <button onClick={() => importRobloxTemplate(robloxInput)}>
-            Importar do Roblox
-          </button>
-        </div>
-        */}
-
-        <button
-          onClick={() => setIsMirrorEnabled(!isMirrorEnabled)}
-          className={
-            styles.toolBtn + " " + (isMirrorEnabled ? styles.active : "")
-          }
-        >
-          🪞
-        </button>
-        <button
-          onClick={() => setWrapMode(!isWrapMode)}
-          className={styles.toolBtn + " " + (isWrapMode ? styles.active : "")}
-        >
-          -
-        </button>
-        <button
-          className={styles.toolBtn + " " + (isEyedropper ? styles.active : "")}
-          onClick={() => {
-            setIsEyedropper(!isEyedropper);
-            setIsEraser(false);
-            setIsBucketMode(false);
+    {/* Seletores de Cores */}
+    <div className="d-flex flex-column gap-2 border-bottom border-secondary pb-3 align-items-center">
+      <div className="text-center">
+        <label htmlFor="brushColor" className="visually-hidden">Cor do Pincel</label>
+        <input
+          type="color"
+          className="form-control form-control-color bg-transparent border-0"
+          id="brushColor"
+          value={brushColor}
+          title="Cor do Pincel"
+          onChange={(e) => {
+            setBrushColor(e.target.value);
+            setBrushTexture(null);
           }}
-          title="Conta-gotas (Copiar Cor)"
-        >
-          💉
-        </button>
-          </div>
+        />
+        <small className="text-light opacity-50" style={{ fontSize: '10px' }}>Pincel</small>
       </div>
+
+      <div className="text-center">
+        <label htmlFor="bodyColor" className="visually-hidden">Cor do Corpo</label>
+        <input
+          type="color"
+          className="form-control form-control-color bg-transparent border-0"
+          id="bodyColor"
+          value={bodyColor}
+          title="Cor de Fundo/Corpo"
+          onChange={(e) => setBodyColor(e.target.value)}
+        />
+        <small className="text-light opacity-50" style={{ fontSize: '10px' }}>Corpo</small>
+      </div>
+    </div>
+
+    {/* Utilitários e Modificadores */}
+    <div className="d-flex flex-column gap-2" role="group" aria-label="Utilitários">
+      <button
+        type="button"
+        className={`btn btn-sm ${isMirrorEnabled ? 'btn-info' : 'btn-outline-light'}`}
+        onClick={() => setIsMirrorEnabled(!isMirrorEnabled)}
+        title="Modo Espelhamento"
+        aria-pressed={isMirrorEnabled}
+      >
+        🪞
+      </button>
+
+      <button
+        type="button"
+        className={`btn btn-sm ${isWrapMode ? 'btn-info' : 'btn-outline-light'}`}
+        onClick={() => setWrapMode(!isWrapMode)}
+        title="Modo Wrap (Envolver)"
+        aria-pressed={isWrapMode}
+      >
+        ↔️
+      </button>
+
+      <button
+        type="button"
+        className={`btn btn-sm ${isEyedropper ? 'btn-info' : 'btn-outline-light'}`}
+        onClick={() => {
+          setIsEyedropper(!isEyedropper);
+          setIsEraser(false);
+          setIsBucketMode(false);
+        }}
+        title="Conta-gotas (Extrair Cor)"
+        aria-pressed={isEyedropper}
+      >
+        💉
+      </button>
+    </div>
+
+  </nav>
+</aside>
     </>
   );
 };
