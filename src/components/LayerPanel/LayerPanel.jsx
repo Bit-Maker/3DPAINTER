@@ -28,7 +28,7 @@ const LayerPanel = ({
   return (
    <section 
   className="layers-panel card bg-dark text-light border-secondary shadow-lg position-fixed bottom-0 end-0 m-3" 
-  style={{ width: '280px', zIndex: 1040, maxHeight: '400px', display: 'flex', flexDirection: 'column' }}
+  style={{ maxWidth: '25vw', width: '280px', zIndex: 1040, maxHeight: '30vh', display: 'flex', flexDirection: 'column' }}
   aria-labelledby="layers-title"
 >
   {/* Cabeçalho do Painel */}

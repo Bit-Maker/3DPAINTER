@@ -188,8 +188,17 @@ const startDrawing = (e, type) => {
 
   return (
   <section 
-  className="preview-sidebar position-fixed end-0 m-3 d-flex flex-column gap-3" 
-  style={{ top: '60px', zIndex: 1020, maxWidth: '200px' }}
+  className="preview-sidebar position-fixed end-0 m-3 d-flex flex-column gap-3 custom-scrollbar" 
+  style={{ 
+    top: '60px', 
+    zIndex: 1020, 
+    maxWidth: '25vw', 
+    width: '300px',
+    /* AJUSTES DE ALTURA */
+    maxHeight: '40vh', 
+    overflowY: 'auto', // Ativa a rolagem vertical se necessário
+    paddingRight: '5px' // Espaço para a scrollbar não encostar no card
+  }}
   aria-label="Visualização dos Templates"
 >
   {/* Input de Arquivo Escondido */}
@@ -202,7 +211,7 @@ const startDrawing = (e, type) => {
   />
 
   {/* Template: SHIRT */}
-  <article className="card bg-dark border-secondary shadow">
+  <article className="card bg-dark border-secondary shadow flex-shrink-0">
     <header className="card-header py-1 border-secondary bg-black bg-opacity-25 text-center">
       <span className="fw-bold text-uppercase" style={{ fontSize: '10px', letterSpacing: '1px' }}>Shirt Template</span>
     </header>
@@ -213,8 +222,8 @@ const startDrawing = (e, type) => {
           ref={shirtCanvasRef}
           width={585}
           height={559}
-          className="img-fluid d-block"
-          style={{ cursor: "crosshair", touchAction: "none" }}
+          className="img-fluid d-block mx-auto"
+          style={{ cursor: "crosshair", touchAction: "none", maxHeight: '15vh', objectFit: 'contain' }}
           onPointerDown={(e) => startDrawing(e, "shirt")}
           onPointerMove={(e) => draw(e, "shirt")}
           onPointerUp={(e) => stopDrawing(e, "shirt")}
@@ -236,7 +245,7 @@ const startDrawing = (e, type) => {
   </article>
 
   {/* Template: PANTS */}
-  <article className="card bg-dark border-secondary shadow">
+  <article className="card bg-dark border-secondary shadow flex-shrink-0">
     <header className="card-header py-1 border-secondary bg-black bg-opacity-25 text-center">
       <span className="fw-bold text-uppercase" style={{ fontSize: '10px', letterSpacing: '1px' }}>Pants Template</span>
     </header>
@@ -247,8 +256,8 @@ const startDrawing = (e, type) => {
           ref={pantsCanvasRef}
           width={585}
           height={559}
-          className="img-fluid d-block"
-          style={{ cursor: "crosshair", touchAction: "none" }}
+          className="img-fluid d-block mx-auto"
+          style={{ cursor: "crosshair", touchAction: "none", maxHeight: '15vh', objectFit: 'contain' }}
           onPointerDown={(e) => startDrawing(e, "pants")}
           onPointerMove={(e) => draw(e, "pants")}
           onPointerUp={(e) => stopDrawing(e, "pants")}

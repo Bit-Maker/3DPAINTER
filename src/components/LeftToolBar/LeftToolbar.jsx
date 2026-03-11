@@ -20,7 +20,7 @@ const LeftToolbar = ({
   return (
     <>
      <aside  
-  className="bg-dark border-end border-secondary d-flex flex-column align-items-center py-4 vh-100 position-fixed start-1" 
+  className="bg-dark border-end border-secondary d-flex flex-column align-items-center py-4 vh-100 position-fixed start-1 overflow-auto" 
   style={{ zIndex: 1030,top: '56px' }}
   aria-label="Barra de Ferramentas de Desenho"
 >

@@ -2,52 +2,65 @@ import { useState } from 'react';
 const BodyPartsPanel = ({ visibilityState, togglePart }) => {
   const [isPanelExpanded, setIsPanelExpanded] = useState(true);
   return (
- 
-  <section 
-  className="body-visibility-panel position-fixed bottom-0 m-3 shadow-lg" 
-  style={{ left: '70px', zIndex: 1040, width: '220px' }}
+ <section 
+  className="body-visibility-panel position-fixed m-3 shadow-lg" 
+  style={{ 
+    left: '55px', 
+    top: '10vh', // Posicionado próximo ao chão para não flutuar no meio da tela
+    zIndex: 1040, 
+    width: '200px',
+    maxWidth: '15vw', 
+    // Garante que o painel inteiro não passe de 25% da altura da tela
+    maxHeight: '10vh', 
+    display: 'flex', 
+    flexDirection: 'column' 
+  }}
   aria-label="Configurações de visibilidade do corpo"
 >
-  <div className="card bg-dark border-secondary text-light">
-    {/* Botão de Controle (Header do Painel) */}
+  <div className="card bg-dark border-secondary text-light h-100 d-flex flex-column shadow-sm">
+    {/* Cabeçalho Fixo */}
     <button 
-      className="card-header border-secondary bg-black bg-opacity-50 d-flex justify-content-between align-items-center w-100 py-2 text-light"
+      className="card-header border-secondary bg-black bg-opacity-50 d-flex justify-content-between align-items-center w-100 py-2 text-light flex-shrink-0"
       type="button"
       onClick={() => setIsPanelExpanded(!isPanelExpanded)}
       aria-expanded={isPanelExpanded}
-      aria-controls="bodyPartsCollapse"
-      style={{ border: 'none', cursor: 'pointer' }}
+      style={{ border: 'none', cursor: 'pointer', outline: 'none' }}
     >
-      <span className="fw-bold small text-uppercase" style={{ letterSpacing: '0.5px' }}>
-        Corpo / Visibilidade
+      <span className="fw-bold" style={{ fontSize: '10px', letterSpacing: '0.5px' }}>
+        VISIBILIDADE
       </span>
-      <span>{isPanelExpanded ? '▼' : '▲'}</span>
+      <span className="small">{isPanelExpanded ? '▼' : '▲'}</span>
     </button>
 
-    {/* Conteúdo Expansível */}
+    {/* Conteúdo com Rolagem Interna */}
     <div 
-      className={`collapse ${isPanelExpanded ? 'show' : ''}`} 
+      className={`collapse ${isPanelExpanded ? 'show' : ''} flex-grow-1 overflow-hidden`} 
       id="bodyPartsCollapse"
+      style={{ display: isPanelExpanded ? 'flex' : 'none', flexDirection: 'column' }}
     >
-      <div className="card-body p-2" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-        <ul className="list-group list-group-flush bg-transparent" role="group">
+      <div 
+        className="card-body p-0 overflow-auto custom-scrollbar" 
+        style={{ 
+          backgroundColor: 'rgba(0,0,0,0.2)'
+        }}
+      >
+        <ul className="list-group list-group-flush bg-transparent m-0" role="group">
           {Object.entries(visibilityState).map(([partName, isVisible]) => (
             <li 
               key={partName} 
-              className={`list-group-item bg-transparent border-secondary d-flex justify-content-between align-items-center p-2 transition-all ${isVisible ? 'text-light' : 'text-muted'}`}
+              className="list-group-item bg-transparent border-secondary d-flex justify-content-between align-items-center px-3 py-2"
               style={{ borderBottomWidth: '1px' }}
             >
-              <span className="small text-capitalize" style={{ fontSize: '12px' }}>
+              <span className="small text-capitalize text-light opacity-75" style={{ fontSize: '11px' }}>
                 {partName.replace(/([A-Z])/g, ' $1').trim()}
               </span>
               
               <button 
-                className={`btn btn-sm p-0 border-0 ${isVisible ? 'text-primary' : 'text-danger opacity-50'}`}
+                className={`btn btn-sm p-0 border-0 ${isVisible ? 'text-info' : 'text-danger opacity-50'}`}
                 onClick={() => togglePart(partName)}
-                title={isVisible ? `Esconder ${partName}` : `Mostrar ${partName}`}
                 aria-pressed={isVisible}
               >
-                <span style={{ fontSize: '1.2rem' }}>{isVisible ? '👁️' : '🚫'}</span>
+                <span>{isVisible ? '👁️' : '🚫'}</span>
               </button>
             </li>
           ))}

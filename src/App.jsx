@@ -42,7 +42,17 @@ function App() {
   const [isPaintMode, setIsPaintMode] = useState(false);
 
 
-
+const toggleFullScreen = () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch((e) => {
+      alert(`Erro ao tentar entrar em tela cheia: ${e.message}`);
+    });
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+};
 
   
   const updateComposition = useCallback(() => {
@@ -282,6 +292,7 @@ function App() {
       }
     };
     initApp();
+    toggleFullScreen();
     // eslint-disable-next-line
   }, []); // Executa apenas uma vez ao montar o componente
 
