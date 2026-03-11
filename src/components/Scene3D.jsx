@@ -37,6 +37,9 @@ const Scene3D = ({
   setActiveChannel,
   isAnimating,
   isPaintMode,
+  setBrushColor,
+  isEyedropper,
+  setIsEyedropper,
 }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -564,6 +567,49 @@ const pixelY = (1 - intersect.uv.y) * 559;
 
   // 5. Gerenciamento de Eventos de Mouse/Touch
   const handlePointerDown = (e) => {
+    if(isEyedropper) {
+      if (!modelRef.current) return;
+
+      mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+      const objectsToTest = [];
+      modelRef.current.traverse((child) => {
+        if (child.isMesh && child.visible) {
+          objectsToTest.push(child);
+        }
+      });
+      const intersects = raycasterRef.current.intersectObjects(
+        objectsToTest,
+        false,
+      );
+
+      if (intersects.length > 0 && intersects[0].uv) {
+        const intersect = intersects[0];
+        const uv = intersect.uv;
+        const meshName = intersect.object.name.toLowerCase();
+        let targetChannel = "shirt";
+        if (meshName.includes("leg")) {
+          targetChannel = "pants";
+        }
+        const channelData = layers
+          .find((l) => l.id === activeLayerId)
+          ?.channels[targetChannel];
+        if (!channelData) return;
+        const layerCtx = channelData.ctx;
+        const CANVAS_W = 585;
+        const CANVAS_H = 559;
+        const x = Math.floor(uv.x * CANVAS_W);
+        const y = Math.floor((1 - uv.y) * CANVAS_H);
+        const pixelData = layerCtx.getImageData(x, y, 1, 1).data;
+        const pickedColor = `rgba(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]}, ${
+          pixelData[3] / 255
+        })`;
+        setBrushColor(pickedColor);
+        setIsEyedropper(false); // Volta para o modo pintura após escolher a cor
+      }
+      return; // Sai da função para não iniciar a pintura
+    }
     if (e.button !== 0 || (!isPaintMode && !isBucketMode && !isEraser && !isWrapMode)) return;
     lastPaintTarget.current = { x: null, y: null, objectId: null };
     paint(e); // Pinta o ponto inicial imediatamente

@@ -492,7 +492,9 @@ const toggleFullScreen = () => {
         channels={finalCompositionRef.current}
         isAnimating={isAnimating}
         isPaintMode={isPaintMode}
-
+        isEyedropper={isEyedropper}
+        setIsEyedropper={setIsEyedropper}
+        setBrushColor={setBrushColor}
       />
       <Preview
         importTemplate={importTemplate}
