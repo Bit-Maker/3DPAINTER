@@ -7,9 +7,9 @@ export const lightingProfiles = {
     background: "#87CEEB" // Céu azul clássico
   },
   sunset: {
-    ambient: { color: 0xffa500, intensity: 0.4 },
-    directional: { color: 0xff4500, intensity: 1.5, position: [-10, 5, 0] },
-    background: "#45223a" // Tom roxo/alaranjado
+    ambient: { color: 0xffffff, intensity: 0.4 },
+    directional: { color: 0xff4500, intensity: 15, position: [-10, 5, 0] },
+    background: "#ffffff" // Tom roxo/alaranjado
   },
   night: {
     ambient: { color: 0x4040ff, intensity: 0.1 },

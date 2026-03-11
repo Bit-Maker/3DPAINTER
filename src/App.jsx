@@ -45,8 +45,7 @@ function App() {
 const toggleFullScreen = () => {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch((e) => {
-      alert(`Erro ao tentar entrar em tela cheia: ${e.message}`);
-    });
+      console.error("Erro ao entrar em tela cheia:", e);});
   } else {
     if (document.exitFullscreen) {
       document.exitFullscreen();
@@ -309,7 +308,7 @@ const toggleFullScreen = () => {
         } else if (event.key.toLowerCase() === "y") {
           event.preventDefault();
           handleRedo(); // Ctrl + Y
-        }
+        } 
         return;
       }
 
@@ -318,7 +317,9 @@ const toggleFullScreen = () => {
         setBrushSize((size) => Math.min(size + 5, 500));
       } else if (event.key === "-") {
         setBrushSize((size) => Math.max(size - 5, 1));
-      }
+      } else if (event.code === "Space") {
+          setIsAnimating(prev => !prev)
+        }
     };
 
     const handleKeyUp = (event) => {
