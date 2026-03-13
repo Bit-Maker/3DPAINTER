@@ -1,20 +1,35 @@
-// shadingHelper.js
+const shadingCache = {
+};
+let shader =  "/templates/Shading.png";
 
-// Carrega a imagem de sombra apenas uma vez para não travar o app
-let cachedShadingImage = null;
+export const setShader = (newShader) => {
+  shader = newShader;
+}
+export const getShader = () => {
+  return shader;
+}
+// src/files.js
+export const shadings = [
+  process.env.PUBLIC_URL+'templates/shadings/shader1.png',
+  process.env.PUBLIC_URL+'templates/shadings/shader2.png',
+  process.env.PUBLIC_URL+'templates/shadings/shader3.png',
+  process.env.PUBLIC_URL+'templates/shadings/shader4.png',
+  process.env.PUBLIC_URL+'templates/shadings/shader5.png',
+  process.env.PUBLIC_URL+'templates/shadings/shader6.png',
+];
 
 const loadShadingTemplate = () => {
   return new Promise((resolve) => {
-    if (cachedShadingImage) {
-      resolve(cachedShadingImage);
+    if (shadingCache[shader]) {
+      resolve(shadingCache[shader]);
       return;
     }
     const img = new Image();
     img.crossOrigin = "anonymous";
     // Caminho para a sua textura de sombra transparente (precisa ser 585x559)
-    img.src = "/templates/Shading.png"; 
+    img.src = shader; 
     img.onload = () => {
-      cachedShadingImage = img;
+      shadingCache[shader] = img;
       resolve(img);
     };
   });

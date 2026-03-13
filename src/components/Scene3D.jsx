@@ -2,7 +2,11 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
-import { performPaint, performBucketFill, performWrapLine } from "../utils/paintHelper";
+import {
+  performPaint,
+  performBucketFill,
+  performWrapLine,
+} from "../utils/paintHelper";
 import { extractUVLines } from "../utils/uvHelper";
 import { createNewCanvas, loadTemplateToCanvas } from "../utils/canvasHelpers";
 import { applyAutomaticShading } from "../utils/shadingHelper";
@@ -17,7 +21,7 @@ const Scene3D = ({
   activeLayerId,
   setModel,
   handleModelLoaded,
-  isWrapMode=true,
+  isWrapMode = true,
   layers,
   saveHistoryAction,
   onPaintEnd,
@@ -40,6 +44,7 @@ const Scene3D = ({
   setBrushColor,
   isEyedropper,
   setIsEyedropper,
+  triggerAutoUV
 }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -52,10 +57,11 @@ const Scene3D = ({
   const mouseRef = useRef(new THREE.Vector2());
   const requestRef = useRef(null);
   const textureRef = useRef(null);
-  const beforeImageData = useRef(null);
   const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
   const mixerRef = useRef(null); // Controla as animações
   const clockRef = useRef(new THREE.Clock()); // Necessário para calcular o tempo da animação
+  const beforeShirtData = useRef(null);
+  const beforePantsData = useRef(null);
 
   const updateUVOverlay = (sceneObject) => {
     if (!onUVsExtracted) return;
@@ -98,8 +104,14 @@ const Scene3D = ({
       0,
     );
 
-    const shadedShirt = await applyAutomaticShading(finalShirtCanvas.canvas, 0.8);
-  const shadedPants = await applyAutomaticShading(finalPantsCanvas.canvas, 0.8);
+    const shadedShirt = await applyAutomaticShading(
+      finalShirtCanvas.canvas,
+      0.8,
+    );
+    const shadedPants = await applyAutomaticShading(
+      finalPantsCanvas.canvas,
+      0.8,
+    );
 
     const shirtTexture = new THREE.CanvasTexture(shadedShirt);
     const pantsTexture = new THREE.CanvasTexture(shadedPants);
@@ -140,24 +152,24 @@ const Scene3D = ({
   };
 
   useEffect(() => {
-  if (controlsRef.current) {
-    if (!isPaintMode && !isBucketMode && !isEraser && !isWrapMode) {
-      // MODO CÂMERA: 1 dedo rotaciona, Mouse Esquerdo rotaciona
-      controlsRef.current.touches.ONE = THREE.TOUCH.ROTATE;
-      controlsRef.current.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
-    } else {
-      // MODO PINTURA: 1 dedo NÃO move a câmera, Mouse Esquerdo NÃO move a câmera
-      controlsRef.current.touches.ONE = null;
-      controlsRef.current.mouseButtons.LEFT = null;
+    if (controlsRef.current) {
+      if (!isPaintMode && !isBucketMode && !isEraser && !isWrapMode) {
+        // MODO CÂMERA: 1 dedo rotaciona, Mouse Esquerdo rotaciona
+        controlsRef.current.touches.ONE = THREE.TOUCH.ROTATE;
+        controlsRef.current.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+      } else {
+        // MODO PINTURA: 1 dedo NÃO move a câmera, Mouse Esquerdo NÃO move a câmera
+        controlsRef.current.touches.ONE = null;
+        controlsRef.current.mouseButtons.LEFT = null;
+      }
     }
-  }
-  // eslint-disable-next-line
-}, [isPaintMode,isBucketMode,isEraser]);
+    // eslint-disable-next-line
+  }, [isPaintMode, isBucketMode, isEraser]);
 
   useEffect(() => {
     applyTexturesToModel();
     // eslint-disable-next-line
-  }, [triggerTextureUpdate, finalComposition,bodyColor]);
+  }, [triggerTextureUpdate, finalComposition, bodyColor,triggerAutoUV]);
 
   const fitCameraToObject = (object) => {
     if (!cameraRef.current || !controlsRef.current) return;
@@ -177,83 +189,82 @@ const Scene3D = ({
     controlsRef.current.update();
   };
 
-
   const animate = () => {
-  requestRef.current = requestAnimationFrame(animate);
+    requestRef.current = requestAnimationFrame(animate);
 
-  if (modelRef.current) {
-    // Pegamos o tempo decorrido para a matemática senoidal
-    const t = clockRef.current.getElapsedTime();
+    if (modelRef.current) {
+      // Pegamos o tempo decorrido para a matemática senoidal
+      const t = clockRef.current.getElapsedTime();
 
-    if (isAnimating) {
-      modelRef.current.traverse((child) => {
-        if (child.isMesh) {
-          const name = child.name.toLowerCase();
+      if (isAnimating) {
+        modelRef.current.traverse((child) => {
+          if (child.isMesh) {
+            const name = child.name.toLowerCase();
 
-          // --- LÓGICA DE MOVIMENTO R6 (Respirar + Balanço) ---
+            // --- LÓGICA DE MOVIMENTO R6 (Respirar + Balanço) ---
 
-          // 1. TORSO: O centro do movimento
-          if (name.includes("torso")) {
-            // Sobe e desce (Respiração)
-            child.position.y = Math.sin(t * 1.5) * 0.02;
-            // Balanço lateral suave (Weight Shift)
-            child.rotation.z = Math.sin(t * 0.8) * 0.02;
-            // Inclinação leve para frente/trás
-            child.rotation.x = 0.05 + Math.sin(t * 1.5) * 0.01;
+            // 1. TORSO: O centro do movimento
+            if (name.includes("torso")) {
+              // Sobe e desce (Respiração)
+              child.position.y = Math.sin(t * 1.5) * 0.02;
+              // Balanço lateral suave (Weight Shift)
+              child.rotation.z = Math.sin(t * 0.8) * 0.02;
+              // Inclinação leve para frente/trás
+              child.rotation.x = 0.05 + Math.sin(t * 1.5) * 0.01;
+            }
+
+            // 2. HEAD: Segue o corpo mas tenta estabilizar o olhar
+            if (name.includes("head")) {
+              child.position.y = Math.sin(t * 1.5) * 0.025;
+              child.rotation.z = -Math.sin(t * 0.8) * 0.01; // Contra-balanço
+              child.rotation.y = Math.sin(t * 0.5) * 0.05; // Olha levemente pros lados
+            }
+
+            // 3. ARMS: Pêndulo lateral e frontal
+            if (name.includes("arm")) {
+              const side = name.includes("left") ? 1 : -1;
+              // Abre e fecha a axila levemente
+              child.rotation.z = (Math.sin(t * 1.5) * 0.03 + 0.02) * side;
+              // Balanço frontal (atrasado em relação ao corpo)
+              child.rotation.x = Math.sin(t * 0.8 + side * 0.5) * 0.01;
+              // Acompanha a altura do torso
+              child.position.y = Math.sin(t * 1.5) * 0.02;
+            }
+
+            // 4. LEGS: Mantêm a base fixa mas giram conforme o quadril
+            if (name.includes("leg")) {
+              child.rotation.z = -Math.sin(t * 0.8) * 0.01;
+            }
           }
-
-          // 2. HEAD: Segue o corpo mas tenta estabilizar o olhar
-          if (name.includes("head")) {
-            child.position.y = Math.sin(t * 1.5) * 0.025;
-            child.rotation.z = -Math.sin(t * 0.8) * 0.01; // Contra-balanço
-            child.rotation.y = Math.sin(t * 0.5) * 0.05;  // Olha levemente pros lados
+        });
+      } else {
+        // --- LÓGICA DE PAUSE (Reset de Pose) ---
+        // Quando pausado, o modelo volta para a pose estática perfeita para pintura
+        modelRef.current.traverse((child) => {
+          if (child.isMesh) {
+            // Reset suave: você pode usar um lerp aqui se quiser que ele "deslize" para o zero
+            child.rotation.set(0, 0, 0);
+            child.position.set(0, 0, 0);
           }
-
-          // 3. ARMS: Pêndulo lateral e frontal
-          if (name.includes("arm")) {
-            const side = name.includes("left") ? 1 : -1;
-            // Abre e fecha a axila levemente
-           child.rotation.z = (Math.sin(t * 1.5) * 0.03 + 0.02) * side;
-            // Balanço frontal (atrasado em relação ao corpo)
-            child.rotation.x = Math.sin(t * 0.8 + (side * 0.5)) * 0.01;
-            // Acompanha a altura do torso
-            child.position.y = Math.sin(t * 1.5) * 0.02;
-          }
-
-          // 4. LEGS: Mantêm a base fixa mas giram conforme o quadril
-          if (name.includes("leg")) {
-            child.rotation.z = -Math.sin(t * 0.8) * 0.01;
-          }
-        }
-      });
-    } else {
-      // --- LÓGICA DE PAUSE (Reset de Pose) ---
-      // Quando pausado, o modelo volta para a pose estática perfeita para pintura
-      modelRef.current.traverse((child) => {
-        if (child.isMesh) {
-          // Reset suave: você pode usar um lerp aqui se quiser que ele "deslize" para o zero
-          child.rotation.set(0, 0, 0);
-          child.position.set(0, 0, 0);
-        }
-      });
+        });
+      }
     }
-  }
 
-  // Atualiza controles de câmera (OrbitControls)
-  if (controlsRef.current) {
-    controlsRef.current.update();
-  }
+    // Atualiza controles de câmera (OrbitControls)
+    if (controlsRef.current) {
+      controlsRef.current.update();
+    }
 
-  // Força atualização da textura se houver pintura ativa
-  if (textureRef.current) {
-    textureRef.current.needsUpdate = true;
-  }
+    // Força atualização da textura se houver pintura ativa
+    if (textureRef.current) {
+      textureRef.current.needsUpdate = true;
+    }
 
-  // Renderiza a cena final
-  if (rendererRef.current && sceneRef.current && cameraRef.current) {
-    rendererRef.current.render(sceneRef.current, cameraRef.current);
-  }
-};
+    // Renderiza a cena final
+    if (rendererRef.current && sceneRef.current && cameraRef.current) {
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
+    }
+  };
 
   // 1. Inicialização da Cena (Roda apenas uma vez)
   useEffect(() => {
@@ -277,22 +288,22 @@ const Scene3D = ({
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.outputColorSpace = THREE.LinearSRGBColorSpace; 
-    renderer.toneMapping = THREE.NoToneMapping; 
+    renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+    renderer.toneMapping = THREE.NoToneMapping;
     mountNode.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.mouseButtons = {
-      LEFT: null, 
+      LEFT: null,
       MIDDLE: THREE.MOUSE.DOLLY,
       RIGHT: THREE.MOUSE.ROTATE,
     };
     controlsRef.current = controls;
 
     scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-    setScene(scene); 
+    setScene(scene);
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
     dirLight.position.set(0, 0, 10);
     scene.add(dirLight);
@@ -364,37 +375,34 @@ const Scene3D = ({
     materialRef.current.needsUpdate = true;
   }, [finalComposition]);
 
-
   useEffect(() => {
-  animate();
-  return () => {
-    if (requestRef.current) {
-      cancelAnimationFrame(requestRef.current);
-    }
-  };
-  // eslint-disable-next-line 
-}, [isAnimating]); 
+    animate();
+    return () => {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+    };
+    // eslint-disable-next-line
+  }, [isAnimating]);
 
   useEffect(() => {
     if (sceneRef.current && !uploadedModel) {
       const loader = new OBJLoader();
-      const modelPath = "/models/avatar.obj"; 
+      const modelPath = "/models/avatar.obj";
       loader.load(
         modelPath,
         (object) => {
           if (modelRef.current) sceneRef.current.remove(modelRef.current);
 
           const model = object.scene;
-      
-      // 1. Configurar Animação
-      if (object.animations && object.animations.length) {
-        mixerRef.current = new THREE.AnimationMixer(model);
-        // Toca a primeira animação encontrada no arquivo (geralmente a Idle)
-        const action = mixerRef.current.clipAction(object.animations[0]);
-        action.play();
-      }
 
-
+          // 1. Configurar Animação
+          if (object.animations && object.animations.length) {
+            mixerRef.current = new THREE.AnimationMixer(model);
+            // Toca a primeira animação encontrada no arquivo (geralmente a Idle)
+            const action = mixerRef.current.clipAction(object.animations[0]);
+            action.play();
+          }
 
           const box = new THREE.Box3().setFromObject(object);
           const center = box.getCenter(new THREE.Vector3());
@@ -449,7 +457,7 @@ const Scene3D = ({
         (error) => console.error("Erro ao carregar avatar.obj:", error),
       );
     }
-    onPaintEnd()
+    onPaintEnd();
 
     // eslint-disable-next-line
   }, [uploadedModel]);
@@ -525,7 +533,7 @@ const Scene3D = ({
           isMirrorEnabled,
         );
       } else if (isWrapMode) {
-const pixelY = (1 - intersect.uv.y) * 559;
+        const pixelY = (1 - intersect.uv.y) * 559;
         // Executa a linha inteira ao invés do pincel normal
         performWrapLine(
           layerCtx,
@@ -567,7 +575,7 @@ const pixelY = (1 - intersect.uv.y) * 559;
 
   // 5. Gerenciamento de Eventos de Mouse/Touch
   const handlePointerDown = (e) => {
-    if(isEyedropper) {
+    if (isEyedropper) {
       if (!modelRef.current) return;
 
       mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -592,8 +600,7 @@ const pixelY = (1 - intersect.uv.y) * 559;
         if (meshName.includes("leg")) {
           targetChannel = "pants";
         }
-        const channelData = layers
-          .find((l) => l.id === activeLayerId)
+        const channelData = layers.find((l) => l.id === activeLayerId)
           ?.channels[targetChannel];
         if (!channelData) return;
         const layerCtx = channelData.ctx;
@@ -610,14 +617,28 @@ const pixelY = (1 - intersect.uv.y) * 559;
       }
       return; // Sai da função para não iniciar a pintura
     }
-    if (e.button !== 0 || (!isPaintMode && !isBucketMode && !isEraser && !isWrapMode)) return;
+    if (
+      e.button !== 0 ||
+      (!isPaintMode && !isBucketMode && !isEraser && !isWrapMode)
+    )
+      return;
     lastPaintTarget.current = { x: null, y: null, objectId: null };
     paint(e); // Pinta o ponto inicial imediatamente
     const activeLayer = layers.find((l) => l.id === activeLayerId);
     if (activeLayer) {
-      const ctx = activeLayer.channels[activeChannel].ctx; // activeChannel é 'shirt' ou 'pants'
       // Tira a "foto" de como o canvas está antes do risco
-      beforeImageData.current = ctx.getImageData(0, 0, 585, 559);
+      beforeShirtData.current = activeLayer.channels.shirt.ctx.getImageData(
+        0,
+        0,
+        585,
+        559,
+      );
+      beforePantsData.current = activeLayer.channels.pants.ctx.getImageData(
+        0,
+        0,
+        585,
+        559,
+      );
     }
     const onPointerMove = (ev) => {
       if (ev.buttons !== 1) return; // Verifica se o botão esquerdo ainda está pressionado
@@ -629,20 +650,30 @@ const pixelY = (1 - intersect.uv.y) * 559;
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
       const activeLayer = layers.find((l) => l.id === activeLayerId);
-      if (activeLayer && beforeImageData.current) {
-        const ctx = activeLayer.channels[activeChannel].ctx;
-        const afterImageData = ctx.getImageData(0, 0, 585, 559);
-
-        // Envia para o histórico no App.jsx
+      if (activeLayer && beforeShirtData.current && beforePantsData.current) {
+        const afterShirtData = activeLayer.channels.shirt.ctx.getImageData(
+          0,
+          0,
+          585,
+          559,
+        );
+        const afterPantsData = activeLayer.channels.pants.ctx.getImageData(
+          0,
+          0,
+          585,
+          559,
+        );
         saveHistoryAction(
           activeLayerId,
-          activeChannel,
-          beforeImageData.current,
-          afterImageData,
+          beforeShirtData.current,
+          afterShirtData,
+          beforePantsData.current,
+          afterPantsData,
         );
 
-        // Limpa a ref temporária
-        beforeImageData.current = null;
+        // Limpa as refs temporárias
+        beforeShirtData.current = null;
+        beforePantsData.current = null;
       }
       onPaintEnd(); // Salva o histórico ou compõe as camadas
     };

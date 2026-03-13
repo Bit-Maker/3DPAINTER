@@ -41,6 +41,12 @@ function App() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isPaintMode, setIsPaintMode] = useState(false);
 
+  const updateComposition = useCallback(() => {
+    if (layers.length > 0 && finalCompositionRef.current) {
+      composeLayers(layers, finalCompositionRef.current);
+      setTriggerTextureUpdate((prev) => prev + 1);
+    }
+  }, [layers]);
 
 const toggleFullScreen = () => {
   if (!document.fullscreenElement) {
@@ -53,13 +59,71 @@ const toggleFullScreen = () => {
   }
 };
 
-  
-  const updateComposition = useCallback(() => {
-    if (layers.length > 0 && finalCompositionRef.current) {
-      composeLayers(layers, finalCompositionRef.current);
-      setTriggerTextureUpdate((prev) => prev + 1);
+
+// 1. Nova função que aplica dados simultaneamente nos dois canais
+  const applyImageDataToLayer = useCallback((layerId, shirtData, pantsData) => {
+    setLayers((prevLayers) => {
+      const newLayers = [...prevLayers];
+      const layerIndex = newLayers.findIndex((l) => l.id === layerId);
+      if (layerIndex === -1) return prevLayers;
+
+      const layer = newLayers[layerIndex];
+      const shirtCtx = layer.channels.shirt.ctx;
+      const pantsCtx = layer.channels.pants.ctx;
+
+      // Limpa e desenha os pixels da Camisa
+      shirtCtx.clearRect(0, 0, 585, 559);
+      if (shirtData) shirtCtx.putImageData(shirtData, 0, 0);
+
+      // Limpa e desenha os pixels da Calça
+      pantsCtx.clearRect(0, 0, 585, 559);
+      if (pantsData) pantsCtx.putImageData(pantsData, 0, 0);
+
+      return newLayers;
+    });
+
+    // Atualiza o modelo 3D logo em seguida
+    setTimeout(() => updateComposition(), 50);
+  }, [updateComposition]);
+
+  // 2. Atualizando o Undo (Desfazer)
+  const handleUndo = useCallback(() => {
+    if (undoStack.current.length === 0) return;
+
+    const action = undoStack.current.pop();
+    redoStack.current.push(action);
+
+    // Restaura as imagens de ANTES da pincelada para ambos
+    applyImageDataToLayer(action.layerId, action.beforeShirt, action.beforePants);
+  }, [applyImageDataToLayer]);
+
+  // 3. Atualizando o Redo (Refazer)
+  const handleRedo = useCallback(() => {
+    if (redoStack.current.length === 0) return;
+
+    const action = redoStack.current.pop();
+    undoStack.current.push(action);
+
+    // Restaura as imagens de DEPOIS da pincelada para ambos
+    applyImageDataToLayer(action.layerId, action.afterShirt, action.afterPants);
+  }, [applyImageDataToLayer]);
+
+  // 4. A função que recebe os dados agora aceita shirt e pants
+  const saveHistoryAction = useCallback((layerId, beforeShirt, afterShirt, beforePants, afterPants) => {
+    undoStack.current.push({ 
+      layerId, 
+      beforeShirt, 
+      afterShirt, 
+      beforePants, 
+      afterPants 
+    });
+    redoStack.current = []; // Limpa o refazer
+    if (undoStack.current.length > MAX_HISTORY) {
+      undoStack.current.shift();
     }
-  }, [layers]);
+  }, []);
+  
+
 
   const handleModelLoaded = (parts) => {
     const initialState = {};
@@ -93,65 +157,7 @@ const toggleFullScreen = () => {
     }, 100);
   };
 
-  const applyImageDataToLayer = useCallback(
-    (layerId, channel, imageData) => {
-      setLayers((prevLayers) => {
-        const newLayers = [...prevLayers];
-        const layerIndex = newLayers.findIndex((l) => l.id === layerId);
-        if (layerIndex === -1) return prevLayers;
 
-        const layer = newLayers[layerIndex];
-        const ctx = layer.channels[channel].ctx;
-
-
-        // Limpa e desenha os pixels salvos
-        ctx.clearRect(0, 0, 585, 559);
-        if (imageData) {
-          ctx.putImageData(imageData, 0, 0);
-        }
-
-        return newLayers;
-      });
-
-      // Atualiza o modelo 3D logo em seguida
-      setTimeout(() => updateComposition(), 502);
-    },
-    [updateComposition],
-  );
-
-  const handleUndo = useCallback(() => {
-    if (undoStack.current.length === 0) return; // Nada para desfazer
-
-    const action = undoStack.current.pop(); // Tira a última ação
-    redoStack.current.push(action); // Joga para a pilha de refazer
-
-    // Restaura a imagem de ANTES da pincelada
-    applyImageDataToLayer(action.layerId, action.channel, action.beforeData);
-  }, [applyImageDataToLayer]);
-
-  const handleRedo = useCallback(() => {
-    if (redoStack.current.length === 0) return; // Nada para refazer
-
-    const action = redoStack.current.pop(); // Tira da pilha de refazer
-    undoStack.current.push(action); // Joga de volta para o undo
-
-    // Restaura a imagem de DEPOIS da pincelada
-    applyImageDataToLayer(action.layerId, action.channel, action.afterData);
-  }, [applyImageDataToLayer]);
-
-  // Função que o Scene3D vai chamar para salvar a pincelada
-  const saveHistoryAction = useCallback(
-    (layerId, channel, beforeData, afterData) => {
-      undoStack.current.push({ layerId, channel, beforeData, afterData });
-      redoStack.current = []; // Sempre que desenhar algo novo, limpa o refazer
-
-      // Remove o mais antigo se passar do limite
-      if (undoStack.current.length > MAX_HISTORY) {
-        undoStack.current.shift();
-      }
-    },
-    [],
-  );
 
   const handleClear = () => {
     if (finalCompositionRef.current) {
