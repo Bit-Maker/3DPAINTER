@@ -129,6 +129,7 @@ const Toolbar = ({
                               setShader(process.env.PUBLIC_URL + fileUrl);
                               handleAutoUV();
                             }}
+                            alt={"No Shaders"}          
                             className={`img-thumbnail ${getShader() === fileUrl && "border-5 border-primary"}`} 
                             style={{ width: "100px", height: "100px" }}
                           ></img>
