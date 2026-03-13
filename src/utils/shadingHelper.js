@@ -16,10 +16,18 @@ export const shadings = [
   process.env.PUBLIC_URL+'templates/shadings/shader4.png',
   process.env.PUBLIC_URL+'templates/shadings/shader5.png',
   process.env.PUBLIC_URL+'templates/shadings/shader6.png',
+  process.env.PUBLIC_URL+'templates/shadings/shader7.png',
+  process.env.PUBLIC_URL+'templates/shadings/shader8.png',
+  process.env.PUBLIC_URL+'templates/shadings/shader9.png',
+  process.env.PUBLIC_URL+'templates/shadings/shader10.png',
+  "none"
 ];
 
 const loadShadingTemplate = () => {
   return new Promise((resolve) => {
+    if(shader==="none") {
+      resolve(null)
+    }
     if (shadingCache[shader]) {
       resolve(shadingCache[shader]);
       return;
@@ -37,6 +45,7 @@ const loadShadingTemplate = () => {
 
 export const applyAutomaticShading = async (sourceCanvas, opacity = 0.7) => {
   const shadingImg = await loadShadingTemplate();
+  if (!shadingImg) return sourceCanvas;
   const shadedCanvas = document.createElement("canvas");
   shadedCanvas.width = sourceCanvas.width; // 585
   shadedCanvas.height = sourceCanvas.height; // 559

@@ -118,22 +118,37 @@ const Toolbar = ({
                       className="position-fixed bg-dark border border-secondary rounded p-1 mt-4 col-2 overflow-y-auto h-50"
                       style={{ zIndex: 1000 }}
                     >
-                      {shadings.map((fileUrl) => (
-                        <img
-                          src={process.env.PUBLIC_URL + fileUrl}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedShading(
-                              process.env.PUBLIC_URL + fileUrl,
-                            );
-                            setShader(process.env.PUBLIC_URL + fileUrl);
-                            handleAutoUV();
-                          }}
-                          alt="Shading Option"
-                          className={`img-thumbnail m-1 ${getShader() === fileUrl && "border-5 border-primary"}`}
-                          style={{ width: "100px", cursor: "pointer" }}
-                        />
-                      ))}
+                      {shadings.map((fileUrl) =>
+                        fileUrl === "none" ? (
+                          <img
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedShading(
+                                process.env.PUBLIC_URL + fileUrl,
+                              );
+                              setShader(process.env.PUBLIC_URL + fileUrl);
+                              handleAutoUV();
+                            }}
+                            className={`img-thumbnail ${getShader() === fileUrl && "border-5 border-primary"}`} 
+                            style={{ width: "100px", height: "100px" }}
+                          ></img>
+                        ) : (
+                          <img
+                            src={process.env.PUBLIC_URL + fileUrl}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedShading(
+                                process.env.PUBLIC_URL + fileUrl,
+                              );
+                              setShader(process.env.PUBLIC_URL + fileUrl);
+                              handleAutoUV();
+                            }}
+                            alt="Shading Option"
+                            className={`img-thumbnail m-1 ${getShader() === fileUrl && "border-5 border-primary"}`}
+                            style={{ width: "100px", cursor: "pointer" }}
+                          />
+                        ),
+                      )}
                     </div>
                   )}
                 </button>
