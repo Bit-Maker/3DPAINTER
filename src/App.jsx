@@ -49,6 +49,7 @@ function App() {
     }
   }, [layers]);
 
+
 const toggleFullScreen = () => {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch((e) => {
@@ -83,9 +84,7 @@ const toggleFullScreen = () => {
       return newLayers;
     });
 
-    // Atualiza o modelo 3D logo em seguida
-    setTimeout(() => updateComposition(), 50);
-  }, [updateComposition]);
+  },[]);
 
   // 2. Atualizando o Undo (Desfazer)
   const handleUndo = useCallback(() => {
@@ -294,7 +293,6 @@ const toggleFullScreen = () => {
         setLayers([baseLayer]);
         setActiveLayerId(baseLayer.id);
 
-        setTimeout(() => updateComposition(), 500);
       }
     };
     initApp();

@@ -337,7 +337,6 @@ const Scene3D = ({
     }
 
     animate();
-
     const handleResize = () => {
       if (cameraRef.current && rendererRef.current) {
         cameraRef.current.aspect = window.innerWidth / window.innerHeight;
@@ -678,6 +677,8 @@ const Scene3D = ({
       };
     }
   }, [onDownloadTexture, finalComposition]);
+
+
 
   return (
     <div
