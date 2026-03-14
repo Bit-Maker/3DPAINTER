@@ -1,5 +1,5 @@
 import { lightingProfiles, updateSceneLighting } from "../../utils/3DHelper";
-import { shadings, setShader, getShader } from "../../utils/shadingHelper";
+import { shadings, setShader, getShader, setShaderOpacity } from "../../utils/shadingHelper";
 
 import { useState } from "react";
 const Toolbar = ({
@@ -18,6 +18,8 @@ const Toolbar = ({
   lightingMode,
   setLightingMode,
   handleAutoUV,
+  shadingOpacity,
+  setShadingOpacity
 }) => {
   const [openShadingMenu, setOpenShadingMenu] = useState(false);
 
@@ -114,7 +116,7 @@ const Toolbar = ({
                 >
                   Sombreamento
                   {openShadingMenu && (
-                    <div
+                    <div onClick={(e)=> {e.stopPropagation()}}
                       className="position-fixed bg-dark border border-secondary rounded p-1 mt-4 col-2 overflow-y-auto h-50"
                       style={{ zIndex: 1000 }}
                     >
@@ -122,7 +124,6 @@ const Toolbar = ({
                         fileUrl === "none" ? (
                           <img
                             onClick={(e) => {
-                              e.stopPropagation();
                               setSelectedShading(
                                 process.env.PUBLIC_URL + fileUrl,
                               );
@@ -150,6 +151,26 @@ const Toolbar = ({
                           />
                         ),
                       )}
+
+                      <div className="col-1 w-100">
+                      <label
+                    htmlFor="brushOpacity"
+                    className="form-label text-light mt-2 w-100"
+                  >
+                    Opacidade:
+                  </label>
+                         <input
+                  type="range"
+                  className="w-50"
+                  id="brushOpacity"
+                  min="0.01"
+                  max="1"
+                  step="0.01"
+                  value={shadingOpacity}
+                  onChange={(e) => {setShadingOpacity(parseFloat(e.target.value)); setShaderOpacity(parseFloat(e.target.value)); handleAutoUV()}}
+                />
+                        
+                      </div>
                     </div>
                   )}
                 </button>

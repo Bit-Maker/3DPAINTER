@@ -139,7 +139,6 @@ const startDrawing = (e, type) => {
     isDrawing.current = false;
 
     // Atualiza o 3D e renderiza as camadas finais apenas quando soltar o mouse
-    if (onPaintEnd) onPaintEnd();
 
     // Salva a ação no histórico
     const activeLayer = layers?.find((l) => l.id === activeLayerId);

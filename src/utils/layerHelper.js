@@ -1,5 +1,5 @@
 import { createNewCanvas } from "./canvasHelpers";
-
+import { loadShadingTemplate, getShaderOpacity } from "./shadingHelper";
 export const createLayer = (id, name = "Nova Camada") => {
   return {
     id: id,
@@ -13,7 +13,7 @@ export const createLayer = (id, name = "Nova Camada") => {
   };
 };
 
-export const composeLayers = (layers, finalComposition) => {
+export const composeLayers = async (layers, finalComposition)  => {
     ['shirt', 'pants'].forEach(type => {
         const finalCtx = finalComposition[type].canvas.getContext('2d');
         
@@ -28,6 +28,23 @@ export const composeLayers = (layers, finalComposition) => {
             }
         });
     });
+
+        const shader = 
+                 await loadShadingTemplate()
+
+                 if(!shader) return;
+
+            const opacity = getShaderOpacity()
+            if (opacity){
+              shader.opacity = opacity
+            }
+           // const shaderCanvas = createNewCanvas("ffff",559,558)
+
+          // shaderCanvas.ctx.drawImage(shadedShirt,0,0)
+        //    shaderCanvas.ctx.globalAlpha = opacity
+            finalComposition.shirt.canvas.getContext('2d').drawImage(shader,0,0)
+            finalComposition.pants.canvas.getContext('2d').drawImage(shader,0,0)
+     
 };
 
 export const clearLayers = (layers) => {

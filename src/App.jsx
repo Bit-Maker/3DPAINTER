@@ -40,6 +40,7 @@ function App() {
   const [isEyedropper, setIsEyedropper] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isPaintMode, setIsPaintMode] = useState(false);
+  const [shadingOpacity, setShadingOpacity] = useState(false);
 
   const updateComposition = useCallback(() => {
     if (layers.length > 0 && finalCompositionRef.current) {
@@ -411,6 +412,8 @@ const toggleFullScreen = () => {
         setIsEyedropper={setIsEyedropper}
         isAnimating={isAnimating}
         setIsAnimating={setIsAnimating}
+        shadingOpacity={shadingOpacity}
+        setShadingOpacity={setShadingOpacity}
       />
       <LeftToolbar
         scene={scene}
@@ -501,6 +504,8 @@ const toggleFullScreen = () => {
         isEyedropper={isEyedropper}
         setIsEyedropper={setIsEyedropper}
         setBrushColor={setBrushColor}
+        setShadingOpacity={setShadingOpacity}
+        shadingOpacity={shadingOpacity}
       />
       <Preview
         importTemplate={importTemplate}

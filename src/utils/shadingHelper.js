@@ -1,12 +1,18 @@
 const shadingCache = {
 };
 let shader =  "/templates/Shading.png";
-
+let opacity = 1;
 export const setShader = (newShader) => {
   shader = newShader;
 }
 export const getShader = () => {
   return shader;
+}
+export const setShaderOpacity = (newOpacity) => {
+  opacity = newOpacity;
+}
+export const getShaderOpacity = () => {
+  return opacity;
 }
 // src/files.js
 export const shadings = [
@@ -23,7 +29,7 @@ export const shadings = [
   "none"
 ];
 
-const loadShadingTemplate = () => {
+export const loadShadingTemplate = () => {
   return new Promise((resolve) => {
     if(shader==="none") {
       resolve(null)

@@ -44,7 +44,9 @@ const Scene3D = ({
   setBrushColor,
   isEyedropper,
   setIsEyedropper,
-  triggerAutoUV
+  triggerAutoUV,
+  setShadingOpacity,
+  shadingOpacity
 }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -106,11 +108,11 @@ const Scene3D = ({
 
     const shadedShirt = await applyAutomaticShading(
       finalShirtCanvas.canvas,
-      0.8,
+      shadingOpacity,
     );
     const shadedPants = await applyAutomaticShading(
       finalPantsCanvas.canvas,
-      0.8,
+      shadingOpacity,
     );
 
     const shirtTexture = new THREE.CanvasTexture(shadedShirt);
@@ -169,7 +171,7 @@ const Scene3D = ({
   useEffect(() => {
     applyTexturesToModel();
     // eslint-disable-next-line
-  }, [triggerTextureUpdate, finalComposition, bodyColor,triggerAutoUV]);
+  }, [triggerTextureUpdate, finalComposition, bodyColor,triggerAutoUV,shadingOpacity]);
 
   const fitCameraToObject = (object) => {
     if (!cameraRef.current || !controlsRef.current) return;
@@ -355,25 +357,6 @@ const Scene3D = ({
     };
     // eslint-disable-next-line
   }, []);
-
-  useEffect(() => {
-    if (!finalComposition?.albedo || !materialRef.current) return;
-
-    const canvas = finalComposition.albedo.canvas;
-
-    if (!textureRef.current) {
-      const tex = new THREE.CanvasTexture(canvas);
-      tex.colorSpace = THREE.NoColorSpace;
-      textureRef.current = tex;
-      materialRef.current.map = tex;
-    } else {
-      if (textureRef.current.image !== canvas) {
-        textureRef.current.image = canvas;
-      }
-      textureRef.current.needsUpdate = true;
-    }
-    materialRef.current.needsUpdate = true;
-  }, [finalComposition]);
 
   useEffect(() => {
     animate();
@@ -675,7 +658,7 @@ const Scene3D = ({
         beforeShirtData.current = null;
         beforePantsData.current = null;
       }
-      onPaintEnd(); // Salva o histórico ou compõe as camadas
+    //  onPaintEnd(); // Salva o histórico ou compõe as camadas
     };
 
     window.addEventListener("pointermove", onPointerMove);
