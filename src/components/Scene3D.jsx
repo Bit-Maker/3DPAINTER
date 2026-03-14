@@ -597,6 +597,8 @@ const Scene3D = ({
         })`;
         setBrushColor(pickedColor);
         setIsEyedropper(false); // Volta para o modo pintura após escolher a cor
+        onPaintEnd(); // Salva o histórico ou compõe as camadas
+
       }
       return; // Sai da função para não iniciar a pintura
     }
@@ -658,7 +660,7 @@ const Scene3D = ({
         beforeShirtData.current = null;
         beforePantsData.current = null;
       }
-    //  onPaintEnd(); // Salva o histórico ou compõe as camadas
+      onPaintEnd(); // Salva o histórico ou compõe as camadas
     };
 
     window.addEventListener("pointermove", onPointerMove);
