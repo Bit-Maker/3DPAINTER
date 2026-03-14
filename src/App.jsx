@@ -168,6 +168,27 @@ const toggleFullScreen = () => {
     }
   };
 
+  const NewTemplate = () => {
+    const r = window.confirm("Do you want to create a new template? All the progress will be lost")
+
+    if(r) {
+    loadTemplateToCanvas(
+          layers[0].channels.shirt.ctx,
+           process.env.PUBLIC_URL+ "/templates/TemplateShirt.png",
+        ).then(()=> {
+         updateComposition()
+        
+        })
+        loadTemplateToCanvas(
+           layers[0].channels.pants.ctx,
+          "/templates/TemplatePants.png",
+        ).then(()=> {
+         updateComposition()
+        
+        });
+      }
+  }
+
   const updateLayerOpacity = (id, opacity) => {
     const newLayers = layers.map((l) =>
       l.id === id ? { ...l, opacity: opacity } : l,
@@ -375,6 +396,7 @@ const toggleFullScreen = () => {
       <BrushCursor size={brushSize} visible={true} />
 
       <Toolbar
+        NewTemplate={NewTemplate}
         scene={scene}
         myAmbLight={ambientLight}
         myDirLight={dirLight}

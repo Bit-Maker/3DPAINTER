@@ -19,11 +19,12 @@ const Toolbar = ({
   setLightingMode,
   handleAutoUV,
   shadingOpacity,
-  setShadingOpacity
+  setShadingOpacity,
+  NewTemplate
 }) => {
   const [openShadingMenu, setOpenShadingMenu] = useState(false);
 
-  const [, setSelectedShading] = useState("none"); // "none", "flat", "smooth"
+  const [, setSelectedShading] = useState("none");
   return (
     <>
       <header
@@ -31,11 +32,7 @@ const Toolbar = ({
         className="position-fixed top-0 start-0 end-0"
       >
         <nav className="navbar navbar-dark bg-dark border-bottom border-secondary shadow-sm py-2">
-          {/* Usamos flex-nowrap para impedir que os itens quebrem linha, 
-      forçando-os a ficarem na mesma linha e permitindo o scroll horizontal.
-    */}
           <div className="container-fluid flex-nowrap align-items-center gap-3 overflow-x-auto custom-scrollbar-x pb-1">
-            {/* Branding / Logo - Fixo à esquerda */}
             <a
               className="navbar-brand d-flex align-items-center flex-shrink-0 m-0"
               href="/"
@@ -43,9 +40,7 @@ const Toolbar = ({
               <span className="fs-6 fw-bold">Editor 3D</span>
             </a>
 
-            {/* Container das Ferramentas - Rola horizontalmente no mobile */}
             <div className="d-flex align-items-center flex-nowrap gap-3 m-0 p-0 flex-grow-1">
-              {/* Controle de Tamanho */}
               <div
                 className="d-flex flex-column flex-shrink-0"
                 style={{ width: "120px" }}
@@ -76,7 +71,6 @@ const Toolbar = ({
                 />
               </div>
 
-              {/* Controle de Opacidade */}
               <div
                 className="d-flex flex-column flex-shrink-0"
                 style={{ width: "120px" }}
@@ -176,10 +170,8 @@ const Toolbar = ({
                 </button>
               </div>
 
-              {/* Divisor Visual (agora visível em todas as telas) */}
               <div className="vr text-secondary flex-shrink-0"></div>
 
-              {/* Ações de Histórico e Limpeza */}
               <div className="d-flex gap-1 flex-shrink-0">
                 <button
                   className="btn btn-outline-light btn-sm px-2"
@@ -201,13 +193,18 @@ const Toolbar = ({
                   className="btn btn-outline-danger btn-sm"
                   onClick={handleClear}
                 >
-                  Limpar
+                  Clear
+                </button>
+                <button
+                  className="btn btn-outline-warning btn-sm"
+                  onClick={NewTemplate}
+                >
+                  New Template
                 </button>
               </div>
 
               <div className="vr text-secondary flex-shrink-0"></div>
 
-              {/* Lado Direito: Iluminação e Animação */}
               <div className="d-flex align-items-center gap-2 flex-shrink-0">
                 <div
                   className="btn-group"
