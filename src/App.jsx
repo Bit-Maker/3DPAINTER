@@ -39,7 +39,7 @@ function App() {
   const [assetId, setAssetId] = useState("Novo Projeto"); // Estado para o ID do asset atual
   const [isEyedropper, setIsEyedropper] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isPaintMode, setIsPaintMode] = useState(false);
+  const [isPaintMode, setIsPaintMode] = useState(true);
   const [shadingOpacity, setShadingOpacity] = useState(false);
 
   const updateComposition = useCallback(() => {
