@@ -176,16 +176,16 @@ const Toolbar = ({
                 <button
                   className="btn btn-outline-light btn-sm px-2"
                   onClick={handleUndo}
-                  title="Desfazer"
-                  aria-label="Desfazer"
+                  title="Undo"
+                  aria-label="Undo"
                 >
                   <span aria-hidden="true">↩️</span>
                 </button>
                 <button
                   className="btn btn-outline-light btn-sm px-2"
                   onClick={handleRedo}
-                  title="Refazer"
-                  aria-label="Refazer"
+                  title="Redo"
+                  aria-label="Redo"
                 >
                   <span aria-hidden="true">↪️</span>
                 </button>
@@ -224,7 +224,7 @@ const Toolbar = ({
                         setLightingMode(mode);
                       }}
                       className={`btn btn-sm btn-dark border-secondary px-2 ${mode === lightingMode ? "active border-primary" : ""}`}
-                      title={`Modo ${mode}`}
+                      title={`Mode ${mode}`}
                     >
                       {mode === "midday" && "☀️"}
                       {mode === "sunset" && "🌅"}

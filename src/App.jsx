@@ -212,7 +212,7 @@ const toggleFullScreen = () => {
 
     const newLayer = {
       id: newId,
-      name: `Camada ${layers.length + 1}`,
+      name: `Layer ${layers.length + 1}`,
       visible: true,
       opacity: 1,
       channels: {

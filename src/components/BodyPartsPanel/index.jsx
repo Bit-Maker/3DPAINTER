@@ -27,7 +27,7 @@ const BodyPartsPanel = ({ visibilityState, togglePart }) => {
       style={{ border: 'none', cursor: 'pointer', outline: 'none' }}
     >
       <span className="fw-bold" style={{ fontSize: '10px', letterSpacing: '0.5px' }}>
-        VISIBILIDADE
+        VISIBILITY
       </span>
       <span className="small">{isPanelExpanded ? '▼' : '▲'}</span>
     </button>

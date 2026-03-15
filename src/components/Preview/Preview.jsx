@@ -198,7 +198,7 @@ const startDrawing = (e, type) => {
     overflowY: 'auto', // Ativa a rolagem vertical se necessário
     paddingRight: '5px' // Espaço para a scrollbar não encostar no card
   }}
-  aria-label="Visualização dos Templates"
+  aria-label="Template's View"
 >
   {/* Input de Arquivo Escondido */}
   <input
@@ -212,7 +212,7 @@ const startDrawing = (e, type) => {
   {/* Template: SHIRT */}
   <article className="card bg-dark border-secondary shadow flex-shrink-0">
     <header className="card-header py-1 border-secondary bg-black bg-opacity-25 text-center">
-      <span className="fw-bold text-uppercase" style={{ fontSize: '10px', letterSpacing: '1px' }}>Shirt Template</span>
+      <span className="fw-bold text-uppercase text-primary" style={{ fontSize: '10px', letterSpacing: '1px' }}>Shirt Template</span>
     </header>
     
     <div className="card-body p-1">
@@ -228,17 +228,17 @@ const startDrawing = (e, type) => {
           onPointerUp={(e) => stopDrawing(e, "shirt")}
           onPointerLeave={(e) => stopDrawing(e, "shirt")}
           role="img"
-          aria-label="Área de desenho da camisa"
+          aria-label="Draw Shirt Area"
         />
       </figure>
     </div>
 
     <footer className="card-footer p-1 d-grid gap-1 border-secondary">
       <button className="btn btn-xs btn-outline-info" onClick={() => handleImportClick("shirt")}>
-        Importar
+        Import
       </button>
       <button className="btn btn-xs btn-primary" onClick={() => downloadTexture("shirt")}>
-        Baixar Camisa
+        Download Shirt
       </button>
     </footer>
   </article>
@@ -246,7 +246,7 @@ const startDrawing = (e, type) => {
   {/* Template: PANTS */}
   <article className="card bg-dark border-secondary shadow flex-shrink-0">
     <header className="card-header py-1 border-secondary bg-black bg-opacity-25 text-center">
-      <span className="fw-bold text-uppercase" style={{ fontSize: '10px', letterSpacing: '1px' }}>Pants Template</span>
+      <span className="fw-bold text-uppercase text-primary" style={{ fontSize: '10px', letterSpacing: '1px' }}>Pants Template</span>
     </header>
     
     <div className="card-body p-1">
@@ -262,17 +262,17 @@ const startDrawing = (e, type) => {
           onPointerUp={(e) => stopDrawing(e, "pants")}
           onPointerLeave={(e) => stopDrawing(e, "pants")}
           role="img"
-          aria-label="Área de desenho da calça"
+          aria-label="Draw Pants Area"
         />
       </figure>
     </div>
 
     <footer className="card-footer p-1 d-grid gap-1 border-secondary">
       <button className="btn btn-xs btn-outline-info" onClick={() => handleImportClick("pants")}>
-        Importar
+        Import
       </button>
       <button className="btn btn-xs btn-primary" onClick={() => downloadTexture("pants")}>
-        Baixar Calça
+        Download Pants
       </button>
     </footer>
   </article>

@@ -22,7 +22,7 @@ const LeftToolbar = ({
       <aside
         className="bg-dark border-end border-secondary d-flex flex-column align-items-center py-4 vh-100 position-fixed start-1 overflow-auto"
         style={{ zIndex: 1030, top: "56px" }}
-        aria-label="Barra de Ferramentas de Desenho"
+        aria-label="Paint Tool Bar"
       >
         <nav
           className="d-flex flex-column gap-3 w-100 px-2"
@@ -33,7 +33,7 @@ const LeftToolbar = ({
           <div
             className="d-flex flex-column gap-2 border-bottom border-secondary pb-3"
             role="group"
-            aria-label="Modos de Pintura"
+            aria-label="Painting Modes"
           >
             <button
               type="button"
@@ -57,7 +57,7 @@ const LeftToolbar = ({
                 setIsPaintMode(false);
                 setWrapMode(false);
               }}
-              title="Balde de Tinta"
+              title="Color Fill"
               aria-pressed={isBucketMode}
             >
               🎨
@@ -70,7 +70,7 @@ const LeftToolbar = ({
                 setIsPaintMode(false);
                 setIsBucketMode(false);
               }}
-              title="Modo Wrap (Envolver)"
+              title="Wrap Mode"
               aria-pressed={isWrapMode}
             >
               ↔️
@@ -98,7 +98,7 @@ const LeftToolbar = ({
                 className="text-light opacity-50"
                 style={{ fontSize: "10px" }}
               >
-                Pincel
+                Brush
               </small>
             </div>
 
@@ -111,7 +111,7 @@ const LeftToolbar = ({
                 className="form-control form-control-color bg-transparent border-0"
                 id="bodyColor"
                 value={bodyColor}
-                title="Cor de Fundo/Corpo"
+                title="Body Color"
                 onChange={(e) => setBodyColor(e.target.value)}
               />
               <small
@@ -128,7 +128,7 @@ const LeftToolbar = ({
             type="button"
             className={`btn btn-sm ${isEraser ? "btn-primary" : "btn-outline-light"}`}
             onClick={() => setIsEraser(!isEraser)}
-            title="Borracha (B)"
+            title="Eraser (E)"
             aria-pressed={isEraser}
           >
             <span className="fw-bold">E</span>
@@ -136,13 +136,13 @@ const LeftToolbar = ({
           <div
             className="d-flex flex-column gap-2"
             role="group"
-            aria-label="Utilitários"
+            aria-label="Utilitaries"
           >
             <button
               type="button"
               className={`btn btn-sm ${isMirrorEnabled ? "btn-info" : "btn-outline-light"}`}
               onClick={() => setIsMirrorEnabled(!isMirrorEnabled)}
-              title="Modo Espelhamento"
+              title="Mirror Mode"
               aria-pressed={isMirrorEnabled}
             >
               🪞
@@ -156,7 +156,7 @@ const LeftToolbar = ({
                 setIsEraser(false);
                 setIsBucketMode(false);
               }}
-              title="Conta-gotas (Extrair Cor)"
+              title="Eye Dropper"
               aria-pressed={isEyedropper}
             >
               💉
