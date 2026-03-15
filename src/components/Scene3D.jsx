@@ -46,7 +46,7 @@ const Scene3D = ({
   setIsEyedropper,
   triggerAutoUV,
   setShadingOpacity,
-  shadingOpacity
+  shadingOpacity,
 }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -172,7 +172,13 @@ const Scene3D = ({
   useEffect(() => {
     applyTexturesToModel();
     // eslint-disable-next-line
-  }, [triggerTextureUpdate, finalComposition, bodyColor,triggerAutoUV,shadingOpacity]);
+  }, [
+    triggerTextureUpdate,
+    finalComposition,
+    bodyColor,
+    triggerAutoUV,
+    shadingOpacity,
+  ]);
 
   const fitCameraToObject = (object) => {
     if (!cameraRef.current || !controlsRef.current) return;
@@ -465,12 +471,12 @@ const Scene3D = ({
       false,
     );
 
+    mouseRef.current.x =
+      ((window.innerWidth - e.clientX) / window.innerWidth) * 2 - 1;
+    mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
 
-      mouseRef.current.x = ((window.innerWidth - e.clientX)/window.innerWidth) * 2 - 1;
-      mouseRef.current.y = -((e.clientY) / window.innerHeight ) * 2 + 1;
-      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
-
-       const mintersects = raycasterRef.current.intersectObjects(
+    const mintersects = raycasterRef.current.intersectObjects(
       objectsToTest,
       false,
     );
@@ -483,7 +489,7 @@ const Scene3D = ({
       if (meshName.includes("leg")) {
         targetChannel = "pants";
       }
-      console.log(intersect.object)
+      console.log(intersect.object);
       setActiveChannel(targetChannel);
       const isSameMember =
         lastPaintTarget.current.objectId === intersect.object.id;
@@ -499,13 +505,17 @@ const Scene3D = ({
 
       const x = intersect.uv.x * 585;
       const y = (1 - intersect.uv.y) * 559;
-      const mx = mintersect? mintersect.uv.x * 585 : null;
-      const my = mintersect?(1 - mintersect.uv.y) * 559: null;
+      const mx = mintersect ? mintersect.uv.x * 585 : null;
+      const my = mintersect ? (1 - mintersect.uv.y) * 559 : null;
 
-
-      const isBackFace = ()=> {
-        return intersect.face && intersect.face.a<6&& intersect.face.b<6&& intersect.face.c<6
-      }
+      const isBackFace = () => {
+        return (
+          intersect.face &&
+          intersect.face.a < 6 &&
+          intersect.face.b < 6 &&
+          intersect.face.c < 6
+        );
+      };
 
       // 4. Face Lock (Recorte UV)
       if (faceLockMode && intersect.face) {
@@ -522,10 +532,36 @@ const Scene3D = ({
         layerCtx.lineTo(uvC.x * CANVAS_W, (1 - uvC.y) * CANVAS_H);
         layerCtx.closePath();
         layerCtx.clip();
-      }            console.log(intersect.face)
+      }
+      console.log(intersect.face);
 
+      if (isBucketMode) {
+        if (isMirrorEnabled) {
+          performBucketFill(
+            layerCtx,
+            intersect.face,
+            intersect.object.geometry,
+            brushColor,
+            brushOpacity,
+            isEraser,
+            x,
+            y,
+            false,
+          );
+          performBucketFill(
+            layerCtx,
+            intersect.face,
+            intersect.object.geometry,
+            brushColor,
+            brushOpacity,
+            isEraser,
+            mx,
+            my,
+            false,
+          );
+          return;
+        }
 
-      if (isBucketMode && !isBackFace()) {
         performBucketFill(
           layerCtx,
           intersect.face,
@@ -556,34 +592,7 @@ const Scene3D = ({
         const distance = hit.distance;
         const distanceFactor = distance * 0.3;
 
-        if(isMirrorEnabled &&isBackFace()) {
-
-          if(isBucketMode) {
-             performBucketFill(
-          layerCtx,
-          intersect.face,
-          intersect.object.geometry,
-          brushColor,
-          brushOpacity,
-          isEraser,
-          x,
-          y,
-          false,
-        );
-             performBucketFill(
-          layerCtx,
-          intersect.face,
-          intersect.object.geometry,
-          brushColor,
-          brushOpacity,
-          isEraser,
-          mx,
-          my,
-          false,
-        );
-        return
-          }
-
+        if (isMirrorEnabled && isBackFace()) {
           performPaint(
             layerCtx,
             x,
@@ -597,39 +606,36 @@ const Scene3D = ({
             brushTexture,
             false,
           );
-           performPaint(
-          layerCtx,
-          mx,
-          my,
-          prevXM,
-          prevYM,
-          brushSize * distanceFactor * pressure,
-          brushColor,
-          brushOpacity,
-          isEraser,
-          brushTexture,
-          false,
-        );
-
+          performPaint(
+            layerCtx,
+            mx,
+            my,
+            prevXM,
+            prevYM,
+            brushSize * distanceFactor * pressure,
+            brushColor,
+            brushOpacity,
+            isEraser,
+            brushTexture,
+            false,
+          );
         } else {
-
-          
-        performPaint(
-          layerCtx,
-          x,
-          y,
-          prevX,
-          prevY,
-          brushSize * distanceFactor * pressure,
-          brushColor,
-          brushOpacity,
-          isEraser,
-          brushTexture,
-          isMirrorEnabled,
-        );
+          performPaint(
+            layerCtx,
+            x,
+            y,
+            prevX,
+            prevY,
+            brushSize * distanceFactor * pressure,
+            brushColor,
+            brushOpacity,
+            isEraser,
+            brushTexture,
+            isMirrorEnabled,
+          );
         }
         lastPaintTarget.current = { x, y, objectId: intersect.object.id };
-        lastPaintTargetM.current = { x: mx,y:  my };
+        lastPaintTargetM.current = { x: mx, y: my };
       }
       if (intersect.object.material.map) {
         intersect.object.material.map.needsUpdate = true;
@@ -680,7 +686,6 @@ const Scene3D = ({
         setBrushColor(pickedColor);
         setIsEyedropper(false); // Volta para o modo pintura após escolher a cor
         onPaintEnd(); // Salva o histórico ou compõe as camadas
-
       }
       return; // Sai da função para não iniciar a pintura
     }
@@ -760,8 +765,6 @@ const Scene3D = ({
       };
     }
   }, [onDownloadTexture, finalComposition]);
-
-
 
   return (
     <div
