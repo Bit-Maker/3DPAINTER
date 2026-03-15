@@ -1,6 +1,6 @@
 import { lightingProfiles, updateSceneLighting } from "../../utils/3DHelper";
 import { shadings, setShader, getShader, setShaderOpacity } from "../../utils/shadingHelper";
-
+import logo from "../../assets/logo512.png"
 import { useState } from "react";
 const Toolbar = ({
   brushSize,
@@ -36,8 +36,8 @@ const Toolbar = ({
             <a
               className="navbar-brand d-flex align-items-center flex-shrink-0 m-0"
               href="/"
-            >
-              <span className="fs-6 fw-bold">Blox Tailor</span>
+            >           
+              
             </a>
 
             <div className="d-flex align-items-center flex-nowrap gap-3 m-0 p-0 flex-grow-1">

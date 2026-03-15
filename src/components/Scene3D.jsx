@@ -588,7 +588,7 @@ const Scene3D = ({
         );
       } else {
         const hit = intersects[0];
-        const pressure = e.pressure || 0.5; // Fallback para dispositivos sem suporte a pressão
+        const pressure = 1//e.pressure || 0.5; // Fallback para dispositivos sem suporte a pressão
         const distance = hit.distance;
         const distanceFactor = distance * 0.3;
 
