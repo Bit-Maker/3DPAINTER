@@ -1,6 +1,6 @@
 import { lightingProfiles, updateSceneLighting } from "../../utils/3DHelper";
 import { shadings, setShader, getShader, setShaderOpacity } from "../../utils/shadingHelper";
-import logo from "../../assets/logo512.png"
+//import logo from "../../assets/logo512.png"
 import { useState } from "react";
 const Toolbar = ({
   brushSize,
