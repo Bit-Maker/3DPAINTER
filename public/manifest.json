@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "BloxTailor",
+  "name": "BloxTailor - 3D Roblox Clothing Editor",
+  "description": "Professional 3D design tool for Roblox creators.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#00f2ff",
+  "background_color": "#0a0a0a"
 }
