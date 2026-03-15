@@ -20,7 +20,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && javascript-obfuscator ./build/static/js --output ./build/static/js --split-strings true --self-defending true",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -41,5 +41,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "^5.3.0"
   }
 }

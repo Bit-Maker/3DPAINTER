@@ -11,7 +11,7 @@ import Preview from "./components/Preview/Preview";
 import { loadTemplateToCanvas } from "./utils/canvasHelpers";
 import { serializeLayers } from "./utils/save";
 import LeftToolbar from "./components/LeftToolBar/LeftToolbar";
-import  Analytics  from "@vercel/analytics"
+import  {Analytics}  from "@vercel/analytics/react"
 
 function App() {
   const [brushColor, setBrushColor] = useState("#000000");
@@ -50,18 +50,6 @@ function App() {
       setTriggerTextureUpdate((prev) => prev + 1);
     }
   }, [layers]);
-
-
-const toggleFullScreen = () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch((e) => {
-      console.error("Erro ao entrar em tela cheia:", e);});
-  } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    }
-  }
-};
 
 
 // 1. Nova função que aplica dados simultaneamente nos dois canais
@@ -319,7 +307,6 @@ const toggleFullScreen = () => {
       }
     };
     initApp();
-    toggleFullScreen();
     // eslint-disable-next-line
   }, []); // Executa apenas uma vez ao montar o componente
 
