@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isMobile } from "../utils/mobile";
 
 const BrushCursor = ({ size, visible }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -20,7 +21,7 @@ const BrushCursor = ({ size, visible }) => {
         position: "fixed",
         left: position.x,
         top: position.y,
-        width: `${size * pressure}px`,
+        width: `${isMobile()? size : size * pressure}px`,
         height: `${size * pressure}px`,
         borderRadius: "50%",
         border: "2px solid white",
