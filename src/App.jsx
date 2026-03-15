@@ -11,6 +11,8 @@ import Preview from "./components/Preview/Preview";
 import { loadTemplateToCanvas } from "./utils/canvasHelpers";
 import { serializeLayers } from "./utils/save";
 import LeftToolbar from "./components/LeftToolBar/LeftToolbar";
+import  Analytics  from "@vercel/analytics"
+
 function App() {
   const [brushColor, setBrushColor] = useState("#000000");
   const [BodyColor, setBodyColor] = useState("#ffd78b");
@@ -544,6 +546,7 @@ const toggleFullScreen = () => {
         setBrushColor={setBrushColor}
         setIsEyedropper={setIsEyedropper}
       />
+      <Analytics/>
       <div id="portal-root"></div>
     </div>
   );
