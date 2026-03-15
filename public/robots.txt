@@ -1,3 +1,10 @@
-# https://www.robotstxt.org/robotstxt.html
+# BloxTailor - The Premier 3D Clothing Creator for Roblox
 User-agent: *
-Disallow:
+Allow: /
+
+# Prevent crawlers from indexing internal or private routes
+Disallow: /admin/
+Disallow: /temp/
+
+# Link to the sitemap to improve SEO discovery
+Sitemap: https://bloxtailor.online/sitemap.xml

@@ -37,7 +37,7 @@ const Toolbar = ({
               className="navbar-brand d-flex align-items-center flex-shrink-0 m-0"
               href="/"
             >
-              <span className="fs-6 fw-bold">Editor 3D</span>
+              <span className="fs-6 fw-bold">Blox Tailor</span>
             </a>
 
             <div className="d-flex align-items-center flex-nowrap gap-3 m-0 p-0 flex-grow-1">
@@ -51,7 +51,7 @@ const Toolbar = ({
                     className="form-label small text-light opacity-75 mb-0"
                     style={{ fontSize: "11px" }}
                   >
-                    Tamanho:
+                    Size:
                   </label>
                   <output
                     className="badge bg-primary ms-1"
@@ -81,7 +81,7 @@ const Toolbar = ({
                     className="form-label small text-light opacity-75 mb-0"
                     style={{ fontSize: "11px" }}
                   >
-                    Opacidade:
+                    Opacity:
                   </label>
                   <output
                     className="badge bg-primary ms-1"
@@ -108,7 +108,7 @@ const Toolbar = ({
                   className={`btn btn-sm px-2 ${openShadingMenu ? "btn-warning" : "btn-outline-light"}`}
                   aria-label={"Sombreamento"}
                 >
-                  Sombreamento
+                  Shading
                   {openShadingMenu && (
                     <div onClick={(e)=> {e.stopPropagation()}}
                       className="position-fixed bg-dark border border-secondary rounded p-1 mt-4 col-2 overflow-y-auto h-50"
@@ -151,7 +151,7 @@ const Toolbar = ({
                     htmlFor="brushOpacity"
                     className="form-label text-light mt-2 w-100"
                   >
-                    Opacidade:
+                    Opacity:
                   </label>
                          <input
                   type="range"

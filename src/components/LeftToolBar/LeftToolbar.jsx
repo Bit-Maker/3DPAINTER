@@ -43,10 +43,10 @@ const LeftToolbar = ({
                 setIsBucketMode(false);
                 setWrapMode(false);
               }}
-              title="Pincel (P)"
+              title="Brush(B)"
               aria-pressed={isPaintMode}
             >
-              <span className="fw-bold">Pi</span>
+              <span className="fw-bold">B</span>
             </button>
 
             <button
@@ -81,14 +81,14 @@ const LeftToolbar = ({
           <div className="d-flex flex-column gap-2 border-bottom border-secondary pb-3 align-items-center">
             <div className="text-center">
               <label htmlFor="brushColor" className="visually-hidden">
-                Cor do Pincel
+                Brush Color
               </label>
               <input
                 type="color"
                 className="form-control form-control-color bg-transparent border-0"
                 id="brushColor"
                 value={brushColor}
-                title="Cor do Pincel"
+                title="Brush Color"
                 onChange={(e) => {
                   setBrushColor(e.target.value);
                   setBrushTexture(null);
@@ -104,7 +104,7 @@ const LeftToolbar = ({
 
             <div className="text-center">
               <label htmlFor="bodyColor" className="visually-hidden">
-                Cor do Corpo
+                Body Color
               </label>
               <input
                 type="color"
@@ -118,7 +118,7 @@ const LeftToolbar = ({
                 className="text-light opacity-50"
                 style={{ fontSize: "10px" }}
               >
-                Corpo
+                Body
               </small>
             </div>
           </div>
@@ -131,7 +131,7 @@ const LeftToolbar = ({
             title="Borracha (B)"
             aria-pressed={isEraser}
           >
-            <span className="fw-bold">B</span>
+            <span className="fw-bold">E</span>
           </button>
           <div
             className="d-flex flex-column gap-2"

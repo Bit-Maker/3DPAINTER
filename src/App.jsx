@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Scene3D from "./components/Scene3D";
 import Toolbar from "./components/Toolbar/Toolbar";
 import BrushCursor from "./components/BrushCursor";
