@@ -15,9 +15,10 @@ export const performPaint = (
 
   // Função interna para evitar repetição de código
   const executeDraw = (currX, currY, prevX, prevY) => {
-    const calibratedSize = Math.max(size * 0.2, size * 582 * 0.0007);
+    const pixelRatio = window.devicePixelRatio || 1;
+    const scaleFactor = pixelRatio > 1 ? 0.8 : 0.6;
+    const calibratedSize = size*scaleFactor;
     const distancia = prevX !== null ? Math.sqrt(Math.pow(currX - prevX, 2) + Math.pow(currY - prevY, 2)) : 0;
-    
     ctx.save();
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -54,10 +55,8 @@ export const performPaint = (
     ctx.restore();
   };
 
-  // 1. Desenho Normal
   executeDraw(x, y, lastX, lastY);
 
-  // 2. Desenho Espelhado
   if (isMirrorEnabled) {
     const canvasWidth = ctx.canvas.width;
     const mirroredX = canvasWidth - x;
@@ -112,7 +111,8 @@ export const performWrapLine = (
   
   if (!zone) return; // Se clicou fora de uma área válida, ignora
 
-  const calibratedSize = Math.max(size * 0.2, size * 582 * 0.0007);
+  const pixelRatio = window.devicePixelRatio || 1;
+  const calibratedSize = size * (pixelRatio > 1 ? 0.8 : 0.6);
 
   ctx.save();
   ctx.lineCap = "square"; // "square" é melhor que "round" para as bordas conectarem certinho nas costuras
