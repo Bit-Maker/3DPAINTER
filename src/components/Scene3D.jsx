@@ -60,6 +60,7 @@ const Scene3D = ({
   const requestRef = useRef(null);
   const textureRef = useRef(null);
   const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
+  const lastPaintTargetM = useRef({ x: null, y: null, objectId: null });
   const mixerRef = useRef(null); // Controla as animações
   const clockRef = useRef(new THREE.Clock()); // Necessário para calcular o tempo da animação
   const beforeShirtData = useRef(null);
@@ -464,18 +465,32 @@ const Scene3D = ({
       false,
     );
 
+
+      mouseRef.current.x = ((window.innerWidth - e.clientX)/window.innerWidth) * 2 - 1;
+      mouseRef.current.y = -((e.clientY) / window.innerHeight ) * 2 + 1;
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+
+       const mintersects = raycasterRef.current.intersectObjects(
+      objectsToTest,
+      false,
+    );
+
     if (intersects.length > 0 && intersects[0].uv) {
       const intersect = intersects[0];
+      const mintersect = mintersects[0];
       const meshName = intersect.object.name.toLowerCase();
       let targetChannel = "shirt";
       if (meshName.includes("leg")) {
         targetChannel = "pants";
       }
+      console.log(intersect.object)
       setActiveChannel(targetChannel);
       const isSameMember =
         lastPaintTarget.current.objectId === intersect.object.id;
       const prevX = isSameMember ? lastPaintTarget.current.x : null;
       const prevY = isSameMember ? lastPaintTarget.current.y : null;
+      const prevXM = isSameMember ? lastPaintTargetM.current.x : null;
+      const prevYM = isSameMember ? lastPaintTargetM.current.y : null;
       const channelData = targetLayer.channels[targetChannel];
       if (!channelData) return;
       const layerCtx = channelData.ctx;
@@ -484,6 +499,13 @@ const Scene3D = ({
 
       const x = intersect.uv.x * 585;
       const y = (1 - intersect.uv.y) * 559;
+      const mx = mintersect? mintersect.uv.x * 585 : null;
+      const my = mintersect?(1 - mintersect.uv.y) * 559: null;
+
+
+      const isBackFace = ()=> {
+        return intersect.face && intersect.face.a<6&& intersect.face.b<6&& intersect.face.c<6
+      }
 
       // 4. Face Lock (Recorte UV)
       if (faceLockMode && intersect.face) {
@@ -500,9 +522,10 @@ const Scene3D = ({
         layerCtx.lineTo(uvC.x * CANVAS_W, (1 - uvC.y) * CANVAS_H);
         layerCtx.closePath();
         layerCtx.clip();
-      }
+      }            console.log(intersect.face)
 
-      if (isBucketMode) {
+
+      if (isBucketMode && !isBackFace()) {
         performBucketFill(
           layerCtx,
           intersect.face,
@@ -533,6 +556,64 @@ const Scene3D = ({
         const distance = hit.distance;
         const distanceFactor = distance * 0.3;
 
+        if(isMirrorEnabled &&isBackFace()) {
+
+          if(isBucketMode) {
+             performBucketFill(
+          layerCtx,
+          intersect.face,
+          intersect.object.geometry,
+          brushColor,
+          brushOpacity,
+          isEraser,
+          x,
+          y,
+          false,
+        );
+             performBucketFill(
+          layerCtx,
+          intersect.face,
+          intersect.object.geometry,
+          brushColor,
+          brushOpacity,
+          isEraser,
+          mx,
+          my,
+          false,
+        );
+        return
+          }
+
+          performPaint(
+            layerCtx,
+            x,
+            y,
+            prevX,
+            prevY,
+            brushSize * distanceFactor * pressure,
+            brushColor,
+            brushOpacity,
+            isEraser,
+            brushTexture,
+            false,
+          );
+           performPaint(
+          layerCtx,
+          mx,
+          my,
+          prevXM,
+          prevYM,
+          brushSize * distanceFactor * pressure,
+          brushColor,
+          brushOpacity,
+          isEraser,
+          brushTexture,
+          false,
+        );
+
+        } else {
+
+          
         performPaint(
           layerCtx,
           x,
@@ -546,7 +627,9 @@ const Scene3D = ({
           brushTexture,
           isMirrorEnabled,
         );
+        }
         lastPaintTarget.current = { x, y, objectId: intersect.object.id };
+        lastPaintTargetM.current = { x: mx,y:  my };
       }
       if (intersect.object.material.map) {
         intersect.object.material.map.needsUpdate = true;
