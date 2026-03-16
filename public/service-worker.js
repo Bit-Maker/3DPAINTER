@@ -34,16 +34,24 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Estratégia "Stale-While-Revalidate": 
-// Carrega do cache para ser rápido, mas busca a versão nova no fundo.
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
+      
       const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          return networkResponse;
+        }
+
+        const responseToCache = networkResponse.clone();
+
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, networkResponse.clone());
+          cache.put(event.request, responseToCache);
         });
+
         return networkResponse;
+      }).catch(() => {
+        return cachedResponse; 
       });
       return cachedResponse || fetchPromise;
     })
