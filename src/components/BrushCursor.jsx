@@ -22,7 +22,7 @@ const BrushCursor = ({ size, visible }) => {
         left: position.x,
         top: position.y,
         width: `${isMobile()? size : size * pressure}px`,
-        height: `${size * pressure}px`,
+        height:`${isMobile()? size : size * pressure}px`,
         borderRadius: "50%",
         border: "2px solid white",
         boxShadow: "0 0 5px rgba(0,0,0,0.5)",
