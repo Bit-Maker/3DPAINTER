@@ -10,6 +10,7 @@ import {
 import { extractUVLines } from "../utils/uvHelper";
 import { createNewCanvas, loadTemplateToCanvas } from "../utils/canvasHelpers";
 import { applyAutomaticShading } from "../utils/shadingHelper";
+import { isMobile } from "../utils/mobile";
 const Scene3D = ({
   brushColor,
   brushSize,
@@ -588,7 +589,7 @@ const Scene3D = ({
         );
       } else {
         const hit = intersects[0];
-        const pressure = 1//e.pressure || 0.5; // Fallback para dispositivos sem suporte a pressão
+        const pressure = isMobile()?1 : e.pressure; // Fallback para dispositivos sem suporte a pressão
         const distance = hit.distance;
         const distanceFactor = distance * 0.3;
 

@@ -15,9 +15,7 @@ export const performPaint = (
 
   // Função interna para evitar repetição de código
   const executeDraw = (currX, currY, prevX, prevY) => {
-    const pixelRatio = window.devicePixelRatio || 1;
-    const scaleFactor = pixelRatio > 1 ? 0.8 : 0.6;
-    const calibratedSize = size*scaleFactor;
+    const calibratedSize = size
     const distancia = prevX !== null ? Math.sqrt(Math.pow(currX - prevX, 2) + Math.pow(currY - prevY, 2)) : 0;
     ctx.save();
     ctx.lineCap = "round";
