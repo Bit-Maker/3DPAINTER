@@ -589,7 +589,7 @@ const Scene3D = ({
         );
       } else {
         const hit = intersects[0];
-        const pressure = isMobile()?1 : e.pressure; // Fallback para dispositivos sem suporte a pressão
+        const pressure = isMobile() ? 1 : e.pressure; // Fallback para dispositivos sem suporte a pressão
         const distance = hit.distance;
         const distanceFactor = distance * 0.3;
 
@@ -696,7 +696,6 @@ const Scene3D = ({
     )
       return;
     lastPaintTarget.current = { x: null, y: null, objectId: null };
-    paint(e); // Pinta o ponto inicial imediatamente
     const activeLayer = layers.find((l) => l.id === activeLayerId);
     if (activeLayer) {
       // Tira a "foto" de como o canvas está antes do risco
@@ -712,6 +711,7 @@ const Scene3D = ({
         585,
         559,
       );
+      paint(e); // Pinta o ponto inicial imediatamente
     }
     const onPointerMove = (ev) => {
       if (ev.buttons !== 1) return; // Verifica se o botão esquerdo ainda está pressionado

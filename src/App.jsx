@@ -43,7 +43,10 @@ function App() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isPaintMode, setIsPaintMode] = useState(true);
   const [shadingOpacity, setShadingOpacity] = useState(false);
-
+  const layersRef = useRef(layers);
+  useEffect(() => {
+    layersRef.current = layers;
+  }, [layers]);
   const updateComposition = useCallback(() => {
     if (layers.length > 0 && finalCompositionRef.current) {
       composeLayers(layers, finalCompositionRef.current);
@@ -51,67 +54,80 @@ function App() {
     }
   }, [layers]);
 
+  const applyHistoryState = useCallback((action, isUndo) => {
+    // Usamos layersRef para garantir que pegamos a versão exata do momento, sem delay do React
+    const currentLayers = layersRef.current;
+    const layer = currentLayers.find((l) => l.id === action.layerId);
+    if (!layer) return;
 
-// 1. Nova função que aplica dados simultaneamente nos dois canais
-  const applyImageDataToLayer = useCallback((layerId, shirtData, pantsData) => {
-    setLayers((prevLayers) => {
-      const newLayers = [...prevLayers];
-      const layerIndex = newLayers.findIndex((l) => l.id === layerId);
-      if (layerIndex === -1) return prevLayers;
+    const shirtCtx = layer.channels.shirt.ctx;
+    const pantsCtx = layer.channels.pants.ctx;
 
-      const layer = newLayers[layerIndex];
-      const shirtCtx = layer.channels.shirt.ctx;
-      const pantsCtx = layer.channels.pants.ctx;
+    // Define qual estado aplicar dependendo se é Undo ou Redo
+    const shirtData = isUndo ? action.beforeShirt : action.afterShirt;
+    const pantsData = isUndo ? action.beforePants : action.afterPants;
 
-      // Limpa e desenha os pixels da Camisa
+    // Restaura e desenha a Camisa
+    if (shirtData) {
       shirtCtx.clearRect(0, 0, 585, 559);
-      if (shirtData) shirtCtx.putImageData(shirtData, 0, 0);
+      shirtCtx.putImageData(shirtData, 0, 0);
+    }
 
-      // Limpa e desenha os pixels da Calça
+    // Restaura e desenha a Calça
+    if (pantsData) {
       pantsCtx.clearRect(0, 0, 585, 559);
-      if (pantsData) pantsCtx.putImageData(pantsData, 0, 0);
+      pantsCtx.putImageData(pantsData, 0, 0);
+    }
 
-      return newLayers;
-    });
+    // A MÁGICA ACONTECE AQUI: Compõe as layers e atualiza a textura 3D IMEDIATAMENTE
+    if (finalCompositionRef.current) {
+      composeLayers(currentLayers, finalCompositionRef.current);
+      setTriggerTextureUpdate((prev) => prev + 1);
+    }
+  }, []);
 
-  },[]);
-
-  // 2. Atualizando o Undo (Desfazer)
+  // 2. Desfazer (Undo)
   const handleUndo = useCallback(() => {
     if (undoStack.current.length === 0) return;
 
     const action = undoStack.current.pop();
-    redoStack.current.push(action);
+    redoStack.current.push(action); // Joga para a pilha de refazer
 
-    // Restaura as imagens de ANTES da pincelada para ambos
-    applyImageDataToLayer(action.layerId, action.beforeShirt, action.beforePants);
-  }, [applyImageDataToLayer]);
+    applyHistoryState(action, true);
+  }, [applyHistoryState]);
 
-  // 3. Atualizando o Redo (Refazer)
+  // 3. Refazer (Redo)
   const handleRedo = useCallback(() => {
     if (redoStack.current.length === 0) return;
 
     const action = redoStack.current.pop();
-    undoStack.current.push(action);
+    undoStack.current.push(action); // Devolve para a pilha de desfazer
 
-    // Restaura as imagens de DEPOIS da pincelada para ambos
-    applyImageDataToLayer(action.layerId, action.afterShirt, action.afterPants);
-  }, [applyImageDataToLayer]);
+    applyHistoryState(action, false);
+  }, [applyHistoryState]);
 
-  // 4. A função que recebe os dados agora aceita shirt e pants
-  const saveHistoryAction = useCallback((layerId, beforeShirt, afterShirt, beforePants, afterPants) => {
-    undoStack.current.push({ 
-      layerId, 
-      beforeShirt, 
-      afterShirt, 
-      beforePants, 
-      afterPants 
-    });
-    redoStack.current = []; // Limpa o refazer
-    if (undoStack.current.length > MAX_HISTORY) {
-      undoStack.current.shift();
-    }
-  }, []);
+  // 4. Salvar Histórico (Protegido contra estouro de RAM)
+  const saveHistoryAction = useCallback(
+    (layerId, beforeShirt, afterShirt, beforePants, afterPants) => {
+      undoStack.current.push({
+        layerId,
+        beforeShirt,
+        afterShirt,
+        beforePants,
+        afterPants,
+      });
+      
+      // Ao pintar algo novo, o futuro (redo) deixa de existir
+      redoStack.current = []; 
+      
+      // Gerenciamento estrito de memória
+      if (undoStack.current.length > MAX_HISTORY) {
+        undoStack.current.shift();
+      }
+    },
+    [] // Sem dependências, essa função nunca recria atoa
+  );
+
   
 
 
