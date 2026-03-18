@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
@@ -46,8 +46,12 @@ const Scene3D = ({
   isEyedropper,
   setIsEyedropper,
   triggerAutoUV,
-  setShadingOpacity,
   shadingOpacity,
+  isStampMode,
+  isTextMode = true,
+  textFont,
+  stampImageElement,
+  stampScale,
 }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -66,6 +70,14 @@ const Scene3D = ({
   const clockRef = useRef(new THREE.Clock()); // Necessário para calcular o tempo da animação
   const beforeShirtData = useRef(null);
   const beforePantsData = useRef(null);
+  const [activeSticker, setActiveSticker] = useState(null);
+  const [stickerScreenPos, setStickerScreenPos] = useState({
+    x: -1000,
+    y: -1000,
+  });
+  const transformMode = useRef(null); // 'move', 'scale', 'rotate'
+  const initialTransformData = useRef(null);
+  const [textString, setTextString] = useState("Blox Tailor");
 
   const updateUVOverlay = (sceneObject) => {
     if (!onUVsExtracted) return;
@@ -116,6 +128,29 @@ const Scene3D = ({
       finalPantsCanvas.canvas,
       shadingOpacity,
     );
+    if (activeSticker) {
+      const targetCanvas =
+        activeSticker.channel === "pants"
+          ? finalPantsCanvas.ctx
+          : finalShirtCanvas.ctx;
+      targetCanvas.save();
+      targetCanvas.globalAlpha = brushOpacity;
+      targetCanvas.translate(activeSticker.x, activeSticker.y);
+      targetCanvas.rotate(activeSticker.rotation);
+      targetCanvas.scale(activeSticker.scale, activeSticker.scale);
+      if (activeSticker.type === "image" && activeSticker.content) {
+        const w = activeSticker.content.width;
+        const h = activeSticker.content.height;
+        targetCanvas.drawImage(activeSticker.content, -w / 2, -h / 2, w, h);
+      } else if (activeSticker.type === "text") {
+        targetCanvas.font = textFont || "bold 40px Arial";
+        targetCanvas.fillStyle = brushColor;
+        targetCanvas.textAlign = "center";
+        targetCanvas.textBaseline = "middle";
+        targetCanvas.fillText(activeSticker.content, 0, 0);
+      }
+      targetCanvas.restore();
+    }
 
     const shirtTexture = new THREE.CanvasTexture(shadedShirt);
     const pantsTexture = new THREE.CanvasTexture(shadedPants);
@@ -179,6 +214,7 @@ const Scene3D = ({
     bodyColor,
     triggerAutoUV,
     shadingOpacity,
+    activeSticker,
   ]);
 
   const fitCameraToObject = (object) => {
@@ -263,6 +299,15 @@ const Scene3D = ({
     // Atualiza controles de câmera (OrbitControls)
     if (controlsRef.current) {
       controlsRef.current.update();
+    }
+
+    if (activeSticker && activeSticker.worldPos && cameraRef.current) {
+      const vector = activeSticker.worldPos.clone();
+      vector.project(cameraRef.current);
+      setStickerScreenPos({
+        x: (vector.x * 0.5 + 0.5) * window.innerWidth,
+        y: -(vector.y * 0.5 - 0.5) * window.innerHeight,
+      });
     }
 
     // Força atualização da textura se houver pintura ativa
@@ -452,6 +497,48 @@ const Scene3D = ({
     // eslint-disable-next-line
   }, [uploadedModel]);
 
+  const commitSticker = () => {
+    if (!activeSticker || !activeLayerId) return;
+    const targetLayer = layers.find((l) => l.id === activeLayerId);
+    const channelData = targetLayer.channels[activeSticker.channel];
+    if (!channelData) return;
+
+    const layerCtx = channelData.ctx;
+
+    // Tira foto antes
+    const beforeData = layerCtx.getImageData(0, 0, 585, 559);
+
+    layerCtx.save();
+    layerCtx.globalAlpha = brushOpacity;
+    layerCtx.translate(activeSticker.x, activeSticker.y);
+    layerCtx.rotate(activeSticker.rotation);
+    layerCtx.scale(activeSticker.scale, activeSticker.scale);
+
+    if (activeSticker.type === "image") {
+      const w = activeSticker.content.width;
+      const h = activeSticker.content.height;
+      layerCtx.drawImage(activeSticker.content, -w / 2, -h / 2, w, h);
+    } else {
+      layerCtx.font = textFont || "bold 40px Arial";
+      layerCtx.fillStyle = brushColor;
+      layerCtx.textAlign = "center";
+      layerCtx.textBaseline = "middle";
+      layerCtx.fillText(activeSticker.content, 0, 0);
+    }
+    layerCtx.restore();
+
+    // Salva o histórico
+    const afterData = layerCtx.getImageData(0, 0, 585, 559);
+    if (activeSticker.channel === "pants") {
+      saveHistoryAction(activeLayerId, null, null, beforeData, afterData);
+    } else {
+      saveHistoryAction(activeLayerId, beforeData, afterData, null, null);
+    }
+
+    setActiveSticker(null);
+    onPaintEnd();
+  };
+
   const paint = (e) => {
     if (!modelRef.current || !activeLayerId) return;
 
@@ -492,6 +579,27 @@ const Scene3D = ({
       }
       console.log(intersect.object);
       setActiveChannel(targetChannel);
+      const x = intersect.uv.x * 585;
+      const y = (1 - intersect.uv.y) * 559;
+      if (isStampMode || isTextMode) {
+        // Se clicar em qualquer lugar da roupa, cria ou move para lá imediatamente
+        setActiveSticker((prev) => ({
+          type: isStampMode ? "image" : "text",
+          // Mantém o texto que o usuário digitou, ou pega o inicial se for novo
+          content: prev
+            ? prev.content
+            : isStampMode
+              ? stampImageElement
+              : textString,
+          scale: prev ? prev.scale : stampScale,
+          rotation: prev ? prev.rotation : 0,
+          x,
+          y,
+          channel: targetChannel,
+          worldPos: intersect.point,
+        }));
+        return;
+      }
       const isSameMember =
         lastPaintTarget.current.objectId === intersect.object.id;
       const prevX = isSameMember ? lastPaintTarget.current.x : null;
@@ -504,8 +612,6 @@ const Scene3D = ({
       const CANVAS_W = 585;
       const CANVAS_H = 559;
 
-      const x = intersect.uv.x * 585;
-      const y = (1 - intersect.uv.y) * 559;
       const mx = mintersect ? mintersect.uv.x * 585 : null;
       const my = mintersect ? (1 - mintersect.uv.y) * 559 : null;
 
@@ -536,7 +642,33 @@ const Scene3D = ({
       }
       console.log(intersect.face);
 
-      if (isBucketMode) {
+      if (isStampMode && stampImageElement) {
+        layerCtx.save();
+        layerCtx.globalAlpha = brushOpacity;
+        const imgW = stampImageElement.width * stampScale;
+        const imgH = stampImageElement.height * stampScale;
+
+        // Desenha a imagem centralizada no ponto do clique (x, y)
+        layerCtx.drawImage(
+          stampImageElement,
+          x - imgW / 2,
+          y - imgH / 2,
+          imgW,
+          imgH,
+        );
+        layerCtx.restore();
+      }
+      // --- NOVA LÓGICA: INSERIR TEXTO ---
+      else if (isTextMode && textString) {
+        layerCtx.save();
+        layerCtx.globalAlpha = brushOpacity;
+        layerCtx.font = textFont;
+        layerCtx.fillStyle = brushColor;
+        layerCtx.textAlign = "center"; // Centraliza o texto no clique
+        layerCtx.textBaseline = "middle";
+        layerCtx.fillText(textString, x, y);
+        layerCtx.restore();
+      } else if (isBucketMode) {
         if (isMirrorEnabled) {
           performBucketFill(
             layerCtx,
@@ -647,6 +779,7 @@ const Scene3D = ({
 
   // 5. Gerenciamento de Eventos de Mouse/Touch
   const handlePointerDown = (e) => {
+    if (e.target.dataset.gizmo) return;
     if (isEyedropper) {
       if (!modelRef.current) return;
 
@@ -748,13 +881,56 @@ const Scene3D = ({
         beforeShirtData.current = null;
         beforePantsData.current = null;
       }
-      onPaintEnd(); // Salva o histórico ou compõe as camadas
+      if (!isStampMode && !isTextMode) onPaintEnd(); // Salva histórico se for pintura normal
     };
 
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
   };
+  const handleGizmoDown = (e, mode) => {
+    e.stopPropagation();
+    e.preventDefault(); // Importante para não bugar o mouse
+    transformMode.current = mode;
+    initialTransformData.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startScale: activeSticker.scale,
+      startRotation: activeSticker.rotation,
+    };
 
+    const onGizmoMove = (ev) => {
+      const deltaX = ev.clientX - initialTransformData.current.startX;
+      const deltaY = ev.clientY - initialTransformData.current.startY;
+
+      if (mode === "scale") {
+        // Movimento horizontal ou vertical aumenta a escala
+        const scaleChange = (deltaX - deltaY) * 0.01;
+        setActiveSticker((prev) => ({
+          ...prev,
+          scale: Math.max(
+            0.1,
+            initialTransformData.current.startScale + scaleChange,
+          ),
+        }));
+      } else if (mode === "rotate") {
+        // Simples cálculo de rotação baseado no mouse
+        const rotationChange = deltaX * 0.01;
+        setActiveSticker((prev) => ({
+          ...prev,
+          rotation: initialTransformData.current.startRotation + rotationChange,
+        }));
+      }
+    };
+
+    const onGizmoUp = () => {
+      transformMode.current = null;
+      window.removeEventListener("pointermove", onGizmoMove);
+      window.removeEventListener("pointerup", onGizmoUp);
+    };
+
+    window.addEventListener("pointermove", onGizmoMove);
+    window.addEventListener("pointerup", onGizmoUp);
+  };
   // 6. Download da Textura
   useEffect(() => {
     if (onDownloadTexture && finalComposition) {
@@ -767,20 +943,120 @@ const Scene3D = ({
     }
   }, [onDownloadTexture, finalComposition]);
 
+
+  // Sincroniza o que é digitado com o sticker ativo para o preview 3D
+useEffect(() => {
+  if (activeSticker && activeSticker.type === "text") {
+    setActiveSticker(prev => ({ ...prev, content: textString }));
+  }
+}, [textString]);
+
+// Garante que a textura 3D atualize quando o sticker mudar (escala, rotação ou texto)
+useEffect(() => {
+  applyTexturesToModel();
+}, [activeSticker]);
+
   return (
+    <>
+      <div
+        ref={mountRef}
+        onPointerDown={handlePointerDown}
+        style={{
+          width: "100vw",
+          height: "100vh",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          cursor: "none",
+          touchAction: "none", // Previne scroll ao pintar no mobile
+        }}
+      />
+      {activeSticker && (
+  <div
+    style={{
+      position: "absolute",
+      left: stickerScreenPos.x,
+      top: stickerScreenPos.y,
+      // O segredo para o HTML girar e escalar com o gizmo:
+      transform: `translate(-50%, -50%) rotate(${activeSticker.rotation}rad) scale(${activeSticker.scale})`,
+      zIndex: 10000,
+      pointerEvents: "auto", // Permite interação com o input e botões
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      padding: "15px",
+      border: "1px dashed rgba(255,255,255,0.5)"
+    }}
+    onPointerDown={(e) => e.stopPropagation()} // Impede o Three.js de girar a câmera ao clicar aqui
+  >
+    {activeSticker.type === "text" ? (
+      <input
+        autoFocus
+        type="text"
+        value={textString}
+        onChange={(e) => setTextString(e.target.value)}
+        style={{
+          background: "rgba(0,0,0,0.5)",
+          border: "1px solid white",
+          color: brushColor,
+          font: textFont || "bold 30px Arial",
+          textAlign: "center",
+          outline: "none",
+          minWidth: "120px",
+          pointerEvents: "all",
+          cursor: "text",
+        }}
+      />
+    ) : (
+      <img
+        src={activeSticker.content.src}
+        style={{ pointerEvents: "none", width: "100px" }}
+        alt="stamp"
+      />
+    )}
+
+    {/* BOTÕES DE CONTROLE */}
+    <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
+      <button onClick={() => setActiveSticker(null)} style={{ padding: "5px 10px", cursor: "pointer" }}>Cancelar</button>
+      <button onClick={commitSticker} style={{ padding: "5px 10px", background: "#00FF88", border: "none", cursor: "pointer" }}>Aplicar</button>
+    </div>
+
+    {/* GIZMOS: Precisam estar aqui dentro para girarem junto com o Transform */}
     <div
-      ref={mountRef}
-      onPointerDown={handlePointerDown}
+      data-gizmo="true"
+      onPointerDown={(e) => handleGizmoDown(e, "scale")}
       style={{
-        width: "100vw",
-        height: "100vh",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        cursor: "none",
-        touchAction: "none", // Previne scroll ao pintar no mobile
+        position: "absolute",
+        right: -10,
+        bottom: -10,
+        width: 25,
+        height: 25,
+        background: "#44ff44",
+        borderRadius: "50%",
+        cursor: "nwse-resize",
+        border: "2px solid white",
+        zIndex: 10001
       }}
     />
+    <div
+      data-gizmo="true"
+      onPointerDown={(e) => handleGizmoDown(e, "rotate")}
+      style={{
+        position: "absolute",
+        right: -10,
+        top: -10,
+        width: 25,
+        height: 25,
+        background: "#ff4444",
+        borderRadius: "50%",
+        cursor: "alias",
+        border: "2px solid white",
+        zIndex: 10001
+      }}
+    />
+  </div>
+)}
+    </>
   );
 };
 

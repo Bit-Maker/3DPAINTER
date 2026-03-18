@@ -11,7 +11,7 @@ import Preview from "./components/Preview/Preview";
 import { loadTemplateToCanvas } from "./utils/canvasHelpers";
 import { serializeLayers } from "./utils/save";
 import LeftToolbar from "./components/LeftToolBar/LeftToolbar";
-import  {Analytics}  from "@vercel/analytics/react"
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const [brushColor, setBrushColor] = useState("#000000");
@@ -43,6 +43,8 @@ function App() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isPaintMode, setIsPaintMode] = useState(true);
   const [shadingOpacity, setShadingOpacity] = useState(false);
+  const [stampImageElement, setStampImageElement] = useState(null);
+  const [isStampMode, setIsStampMode] = useState(false);
   const layersRef = useRef(layers);
   useEffect(() => {
     layersRef.current = layers;
@@ -53,6 +55,22 @@ function App() {
       setTriggerTextureUpdate((prev) => prev + 1);
     }
   }, [layers]);
+
+  const handleImageUpload = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        setStampImageElement(img);
+        setIsStampMode(true); // Ativa a ferramenta
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+};
 
   const applyHistoryState = useCallback((action, isUndo) => {
     // Usamos layersRef para garantir que pegamos a versão exata do momento, sem delay do React
@@ -116,20 +134,17 @@ function App() {
         beforePants,
         afterPants,
       });
-      
+
       // Ao pintar algo novo, o futuro (redo) deixa de existir
-      redoStack.current = []; 
-      
+      redoStack.current = [];
+
       // Gerenciamento estrito de memória
       if (undoStack.current.length > MAX_HISTORY) {
         undoStack.current.shift();
       }
     },
-    [] // Sem dependências, essa função nunca recria atoa
+    [], // Sem dependências, essa função nunca recria atoa
   );
-
-  
-
 
   const handleModelLoaded = (parts) => {
     const initialState = {};
@@ -163,8 +178,6 @@ function App() {
     }, 100);
   };
 
-
-
   const handleClear = () => {
     if (finalCompositionRef.current) {
       finalCompositionRef.current.shirt.ctx.clearRect(0, 0, 585, 559);
@@ -175,32 +188,32 @@ function App() {
   };
 
   const NewTemplate = () => {
-    const r = window.confirm("Do you want to create a new template? All the progress will be lost")
+    const r = window.confirm(
+      "Do you want to create a new template? All the progress will be lost",
+    );
 
-    if(r) {
-    loadTemplateToCanvas(
-          layers[0].channels.shirt.ctx,
-           process.env.PUBLIC_URL+ "/templates/TemplateShirt.png",
-        ).then(()=> {
-         updateComposition()
-        
-        })
-        loadTemplateToCanvas(
-           layers[0].channels.pants.ctx,
-          "/templates/TemplatePants.png",
-        ).then(()=> {
-         updateComposition()
-        
-        });
-      }
-  }
+    if (r) {
+      loadTemplateToCanvas(
+        layers[0].channels.shirt.ctx,
+        process.env.PUBLIC_URL + "/templates/TemplateShirt.png",
+      ).then(() => {
+        updateComposition();
+      });
+      loadTemplateToCanvas(
+        layers[0].channels.pants.ctx,
+        "/templates/TemplatePants.png",
+      ).then(() => {
+        updateComposition();
+      });
+    }
+  };
 
   const updateLayerOpacity = (id, opacity) => {
     const newLayers = layers.map((l) =>
       l.id === id ? { ...l, opacity: opacity } : l,
     );
     setLayers(newLayers);
-    updateComposition()
+    updateComposition();
   };
 
   const handleAddLayer = () => {
@@ -319,7 +332,6 @@ function App() {
 
         setLayers([baseLayer]);
         setActiveLayerId(baseLayer.id);
-
       }
     };
     initApp();
@@ -339,7 +351,7 @@ function App() {
         } else if (event.key.toLowerCase() === "y") {
           event.preventDefault();
           handleRedo(); // Ctrl + Y
-        } 
+        }
         return;
       }
 
@@ -349,8 +361,8 @@ function App() {
       } else if (event.key === "-") {
         setBrushSize((size) => Math.max(size - 5, 1));
       } else if (event.code === "Space") {
-          setIsAnimating(prev => !prev)
-        }
+        setIsAnimating((prev) => !prev);
+      }
     };
 
     const handleKeyUp = (event) => {
@@ -549,7 +561,7 @@ function App() {
         setBrushColor={setBrushColor}
         setIsEyedropper={setIsEyedropper}
       />
-      <Analytics/>
+      <Analytics />
       <div id="portal-root"></div>
     </div>
   );
