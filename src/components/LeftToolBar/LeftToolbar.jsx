@@ -16,6 +16,8 @@ const LeftToolbar = ({
   setIsEyedropper,
   isPaintMode,
   setIsPaintMode,
+  isTextMode,
+  setIsTextMode
 }) => {
   return (
     <>
@@ -42,6 +44,7 @@ const LeftToolbar = ({
                 setIsPaintMode(!isPaintMode);
                 setIsBucketMode(false);
                 setWrapMode(false);
+                setIsTextMode(false);
               }}
               title="Brush(B)"
               aria-pressed={isPaintMode}
@@ -56,6 +59,7 @@ const LeftToolbar = ({
                 setIsBucketMode(!isBucketMode);
                 setIsPaintMode(false);
                 setWrapMode(false);
+                setIsTextMode(false);
               }}
               title="Color Fill"
               aria-pressed={isBucketMode}
@@ -69,11 +73,26 @@ const LeftToolbar = ({
                 setWrapMode(!isWrapMode);
                 setIsPaintMode(false);
                 setIsBucketMode(false);
+                setIsTextMode(false);
               }}
               title="Wrap Mode"
               aria-pressed={isWrapMode}
             >
               ↔️
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm ${isTextMode ? "btn-info" : "btn-outline-light"}`}
+              onClick={() => {
+                setIsTextMode(!isTextMode)
+                setWrapMode(false);
+                setIsPaintMode(false);
+                setIsBucketMode(false);
+              }}
+              title="Text Mode"
+              aria-pressed={isTextMode}
+            >
+              T
             </button>
           </div>
 

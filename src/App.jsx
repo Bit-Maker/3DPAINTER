@@ -45,6 +45,7 @@ function App() {
   const [shadingOpacity, setShadingOpacity] = useState(false);
   const [stampImageElement, setStampImageElement] = useState(null);
   const [isStampMode, setIsStampMode] = useState(false);
+  const [isTextMode,setIsTextMode] = useState(false)
   const layersRef = useRef(layers);
   useEffect(() => {
     layersRef.current = layers;
@@ -490,6 +491,8 @@ function App() {
         setIsEyedropper={setIsEyedropper}
         isAnimating={isAnimating}
         setIsAnimating={setIsAnimating}
+        isTextMode={isTextMode}
+        setIsTextMode={setIsTextMode}
       />
 
       <LayerPanel
@@ -543,6 +546,7 @@ function App() {
         setBrushColor={setBrushColor}
         setShadingOpacity={setShadingOpacity}
         shadingOpacity={shadingOpacity}
+        isTextMode={isTextMode}
       />
       <Preview
         importTemplate={importTemplate}

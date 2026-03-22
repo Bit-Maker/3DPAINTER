@@ -48,7 +48,7 @@ const Scene3D = ({
   triggerAutoUV,
   shadingOpacity,
   isStampMode,
-  isTextMode = true,
+  isTextMode,
   textFont,
   stampImageElement,
   stampScale,
@@ -78,6 +78,8 @@ const Scene3D = ({
   const transformMode = useRef(null); // 'move', 'scale', 'rotate'
   const initialTransformData = useRef(null);
   const [textString, setTextString] = useState("Blox Tailor");
+
+  console.log(isTextMode)
 
   const updateUVOverlay = (sceneObject) => {
     if (!onUVsExtracted) return;
@@ -120,14 +122,6 @@ const Scene3D = ({
       0,
     );
 
-    const shadedShirt = await applyAutomaticShading(
-      finalShirtCanvas.canvas,
-      shadingOpacity,
-    );
-    const shadedPants = await applyAutomaticShading(
-      finalPantsCanvas.canvas,
-      shadingOpacity,
-    );
     if (activeSticker) {
       const targetCanvas =
         activeSticker.channel === "pants"
@@ -151,6 +145,14 @@ const Scene3D = ({
       }
       targetCanvas.restore();
     }
+    const shadedShirt = await applyAutomaticShading(
+      finalShirtCanvas.canvas,
+      shadingOpacity,
+    );
+    const shadedPants = await applyAutomaticShading(
+      finalPantsCanvas.canvas,
+      shadingOpacity,
+    );
 
     const shirtTexture = new THREE.CanvasTexture(shadedShirt);
     const pantsTexture = new THREE.CanvasTexture(shadedPants);
@@ -586,18 +588,15 @@ const Scene3D = ({
         setActiveSticker((prev) => ({
           type: isStampMode ? "image" : "text",
           // Mantém o texto que o usuário digitou, ou pega o inicial se for novo
-          content: prev
-            ? prev.content
-            : isStampMode
-              ? stampImageElement
-              : textString,
-          scale: prev ? prev.scale : stampScale,
+          content: isStampMode ? stampImageElement : textString,
+          scale: prev ? prev.scale : 1,
           rotation: prev ? prev.rotation : 0,
           x,
           y,
           channel: targetChannel,
           worldPos: intersect.point,
         }));
+        console.log("novo sticker")
         return;
       }
       const isSameMember =
@@ -825,7 +824,7 @@ const Scene3D = ({
     }
     if (
       e.button !== 0 ||
-      (!isPaintMode && !isBucketMode && !isEraser && !isWrapMode)
+      (!isPaintMode && !isBucketMode && !isEraser && !isWrapMode && !isTextMode)
     )
       return;
     lastPaintTarget.current = { x: null, y: null, objectId: null };
@@ -887,9 +886,9 @@ const Scene3D = ({
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
   };
-  const handleGizmoDown = (e, mode) => {
+ const handleGizmoDown = (e, mode) => {
     e.stopPropagation();
-    e.preventDefault(); // Importante para não bugar o mouse
+    e.preventDefault(); 
     transformMode.current = mode;
     initialTransformData.current = {
       startX: e.clientX,
@@ -903,17 +902,18 @@ const Scene3D = ({
       const deltaY = ev.clientY - initialTransformData.current.startY;
 
       if (mode === "scale") {
-        // Movimento horizontal ou vertical aumenta a escala
-        const scaleChange = (deltaX - deltaY) * 0.01;
+        // CORREÇÃO: Somar deltaX e deltaY para que arrastar na diagonal funcione perfeitamente.
+        // O multiplicador 0.005 deixa o redimensionamento mais controlado e profissional.
+        const scaleChange = (deltaX + deltaY) * 0.005; 
+        console.log(activeSticker.scale)
         setActiveSticker((prev) => ({
           ...prev,
           scale: Math.max(
-            0.1,
+            0.1, // Evita que o sticker fique com escala negativa ou inverta
             initialTransformData.current.startScale + scaleChange,
           ),
         }));
       } else if (mode === "rotate") {
-        // Simples cálculo de rotação baseado no mouse
         const rotationChange = deltaX * 0.01;
         setActiveSticker((prev) => ({
           ...prev,
@@ -994,7 +994,12 @@ useEffect(() => {
         autoFocus
         type="text"
         value={textString}
-        onChange={(e) => setTextString(e.target.value)}
+        onChange={(e) =>{setTextString(e.target.value)}}
+        onKeyDown={(e) => {
+    e.stopPropagation(); // Impede que o Three.js ouça a tecla
+    // Opcional: permitir o 'Enter' para aplicar o sticker
+    if (e.key === 'Enter') commitSticker();
+  }}
         style={{
           background: "rgba(0,0,0,0.5)",
           border: "1px solid white",
