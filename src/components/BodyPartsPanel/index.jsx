@@ -31,10 +31,8 @@ const BodyPartsPanel = ({ visibilityState, togglePart }) => {
       </span>
       <span className="small">{isPanelExpanded ? '▼' : '▲'}</span>
     </button>
-
-    {/* Conteúdo com Rolagem Interna */}
     <div 
-      className={`collapse ${isPanelExpanded ? 'show' : ''} flex-grow-1 overflow-hidden`} 
+      className={`collapse ${isPanelExpanded ? 'show' : ''} flex-grow-1 overflow-hidden h-1`} 
       id="bodyPartsCollapse"
       style={{ display: isPanelExpanded ? 'flex' : 'none', flexDirection: 'column' }}
     >

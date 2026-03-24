@@ -18,7 +18,7 @@ export const composeLayers = async (layers, finalComposition) => {
     const channel = finalComposition[type]? finalComposition[type] : finalComposition.main
     const finalCtx = channel.canvas.getContext("2d");
 
-    finalCtx.clearRect(0, 0, 585, 559);
+    finalCtx.clearRect(0, 0, 1024, 1024);
 
     layers.forEach((layer) => {
       if (layer.visible) {
@@ -46,8 +46,14 @@ export const composeLayers = async (layers, finalComposition) => {
 };
 
 export const clearLayers = (layers) => {
+
   layers.forEach((layer) => {
-    layer.channels.shirt.ctx.clearRect(0, 0, 585, 559);
-    layer.channels.pants.ctx.clearRect(0, 0, 585, 559);
+    if (layer.channels.main) {
+      layer.channels.main.ctx.clearRect(0,0,1024,1024)
+      
+    } else {
+      layer.channels.shirt.ctx.clearRect(0, 0, 585, 559);
+      layer.channels.pants.ctx.clearRect(0, 0, 585, 559);
+    }
   });
 };

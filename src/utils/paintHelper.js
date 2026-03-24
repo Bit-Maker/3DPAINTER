@@ -8,7 +8,6 @@ export const performPaint = (
   color,
   opacity,
   isEraser,
-  brushTexture,
   isMirrorEnabled
 ) => {
   if (!ctx) return;

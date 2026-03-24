@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import General3D from "../components/General3D";
-import Toolbar from "../components/Toolbar/Toolbar";
+import ToolbarGeneral from "../components/GeneralPage/ToolbarGeneral/ToolbarGeneral";
 import BrushCursor from "../components/BrushCursor";
 import LayerPanel from "../components/LayerPanel/LayerPanel";
 import { createNewCanvas } from "../utils/canvasHelpers";
 import { createLayer, composeLayers, clearLayers } from "../utils/layerHelper";
 import BodyPartsPanel from "../components/BodyPartsPanel";
-import MeshPreview from "../components/MeshPreview/MeshPreview";
+import MeshPreview from "../components/GeneralPage/MeshPreview/MeshPreview";
 import { loadTemplateToCanvas } from "../utils/canvasHelpers";
 import { serializeLayers } from "../utils/save";
 import LeftToolbar from "../components/LeftToolBar/LeftToolbar";
@@ -29,7 +29,7 @@ function MeshEditor() {
   const [triggerTextureUpdate, setTriggerTextureUpdate] = useState(0);
   const undoStack = useRef([]);
   const redoStack = useRef([]);
-  const MAX_HISTORY = 20; // Limite para não estourar a memória RAM
+  const MAX_HISTORY = 20;
   const finalCompositionRef = useRef(null);
   const [bodyPartsVisibility, setBodyPartsVisibility] = useState({});
   const [lightingMode, setLightingMode] = useState("studio");
@@ -37,12 +37,13 @@ function MeshEditor() {
   const [ambientLight, setAmbientLight] = useState(null);
   const [dirLight, setDirLight] = useState(null);
   const [isWrapMode, setWrapMode] = useState(false);
-  const [assetId, setAssetId] = useState("Novo Projeto"); // Estado para o ID do asset atual
+  const [assetId, setAssetId] = useState("Novo Projeto"); 
   const [isEyedropper, setIsEyedropper] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isPaintMode, setIsPaintMode] = useState(true);
   const [shadingOpacity, setShadingOpacity] = useState(false);
   const layersRef = useRef(layers);
+
   useEffect(() => {
     layersRef.current = layers;
   }, [layers]);
@@ -53,81 +54,60 @@ function MeshEditor() {
     }
   }, [layers]);
 
-  const applyHistoryState = useCallback((action, isUndo) => {
-    // Usamos layersRef para garantir que pegamos a versão exata do momento, sem delay do React
-    const currentLayers = layersRef.current;
-    const layer = currentLayers.find((l) => l.id === action.layerId);
-    if (!layer) return;
+ const saveHistoryAction = (layerId, beforeData, afterData) => {
+  const action = {
+    layerId,
+    before: beforeData, 
+    after: afterData  
+  };
+console.log(undoStack.current)
+  undoStack.current = (()=> {
 
-    const shirtCtx = layer.channels.shirt.ctx;
-    const pantsCtx = layer.channels.pants.ctx;
+    const newStack = [...undoStack.current, action];
+    if (newStack.length > MAX_HISTORY) newStack.shift(); 
+    return newStack;
+  })()
+  
 
-    // Define qual estado aplicar dependendo se é Undo ou Redo
-    const shirtData = isUndo ? action.beforeShirt : action.afterShirt;
-    const pantsData = isUndo ? action.beforePants : action.afterPants;
+  redoStack.current = [];
+};
 
-    // Restaura e desenha a Camisa
-    if (shirtData) {
-      shirtCtx.clearRect(0, 0, 585, 559);
-      shirtCtx.putImageData(shirtData, 0, 0);
-    }
 
-    // Restaura e desenha a Calça
-    if (pantsData) {
-      pantsCtx.clearRect(0, 0, 585, 559);
-      pantsCtx.putImageData(pantsData, 0, 0);
-    }
+const handleUndo = () => {
+  if (undoStack.current.length === 0) return;
 
-    // A MÁGICA ACONTECE AQUI: Compõe as layers e atualiza a textura 3D IMEDIATAMENTE
-    if (finalCompositionRef.current) {
-      composeLayers(currentLayers, finalCompositionRef.current);
-      setTriggerTextureUpdate((prev) => prev + 1);
-    }
-  }, []);
+  const lastAction = undoStack.current.pop();
 
-  // 2. Desfazer (Undo)
-  const handleUndo = useCallback(() => {
-    if (undoStack.current.length === 0) return;
+  
+  
+  const layer = layers.find(l => l.id === lastAction.layerId);
+  if (!layer) return;
 
-    const action = undoStack.current.pop();
-    redoStack.current.push(action); // Joga para a pilha de refazer
+  const ctx = layer.channels.main.ctx;
 
-    applyHistoryState(action, true);
-  }, [applyHistoryState]);
+  ctx.putImageData(lastAction.before, 0, 0);
 
-  // 3. Refazer (Redo)
-  const handleRedo = useCallback(() => {
-    if (redoStack.current.length === 0) return;
+  redoStack.current =  [...redoStack.current, lastAction];
+  undoStack.current =  undoStack.current.slice(0, -1);
+  updateComposition()
+};
 
-    const action = redoStack.current.pop();
-    undoStack.current.push(action); // Devolve para a pilha de desfazer
+const handleRedo = () => {
+  if (redoStack.current.length === 0) return;
 
-    applyHistoryState(action, false);
-  }, [applyHistoryState]);
+  const action = redoStack.current.pop();
+  const layer = layers.find(l => l.id === action.layerId);
+  if (!layer) return;
 
-  // 4. Salvar Histórico (Protegido contra estouro de RAM)
-  const saveHistoryAction = useCallback(
-    (layerId, beforeShirt, afterShirt, beforePants, afterPants) => {
-      undoStack.current.push({
-        layerId,
-        beforeShirt,
-        afterShirt,
-        beforePants,
-        afterPants,
-      });
+  const ctx = layer.channels.main.ctx;
+  ctx.putImageData(action.after, 0, 0);
 
-      // Ao pintar algo novo, o futuro (redo) deixa de existir
-      redoStack.current = [];
+  undoStack.current =  [...undoStack.current, action];
+  redoStack.current =   redoStack.current.slice(0, -1);
+  updateComposition()
+};
 
-      // Gerenciamento estrito de memória
-      if (undoStack.current.length > MAX_HISTORY) {
-        undoStack.current.shift();
-      }
-    },
-    [], // Sem dependências, essa função nunca recria atoa
-  );
 
-  // Adicione dentro do seu componente MeshEditor
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -135,10 +115,9 @@ function MeshEditor() {
     const reader = new FileReader();
     const extension = file.name.split(".").pop().toLowerCase();
 
-    // Criamos uma URL para o arquivo local
     const url = URL.createObjectURL(file);
 
-    // Guardamos o objeto com a URL e o tipo para o Scene3D processar
+
     setUploadedModel({
       url: url,
       extension: extension,
@@ -150,9 +129,9 @@ function MeshEditor() {
     const initialState = {};
     parts.forEach((part) => {
       if (part.name !== "Head") {
-        initialState[part.name] = true; // Tudo começa visível
+        initialState[part.name] = true;
       } else {
-        initialState[part.name] = false; // Deixa a cabeça invisível por padrão
+        initialState[part.name] = false;
       }
     });
     setBodyPartsVisibility(initialState);
@@ -180,7 +159,7 @@ function MeshEditor() {
 
   const handleClear = () => {
     if (finalCompositionRef.current) {
-      finalCompositionRef.current.main.ctx.clearRect(0, 0, 585, 559);
+      finalCompositionRef.current.main.ctx.clearRect(0, 0, 1024, 1024);
       clearLayers(layers);
       setTriggerTextureUpdate((prev) => prev + 1);
     }
@@ -225,7 +204,7 @@ function MeshEditor() {
   };
 
   const handleAddLayer = () => {
-    const newId = Date.now(); // Removido as chaves {} de destruturação que causavam erro
+    const newId = Date.now(); 
 
     const newLayer = {
       id: newId,
@@ -265,14 +244,12 @@ function MeshEditor() {
 
   useEffect(() => {
     const initApp = async () => {
-      // 1. Inicializa os canais de composição final se não existirem
       if (!finalCompositionRef.current) {
         finalCompositionRef.current = {
           main: createNewCanvas("transparent", 1024, 1024),
         };
       }
 
-      // 2. Tenta buscar o backup primeiro
       const savedData = localStorage.getItem("roblox_editor_backup");
 
       if (savedData) {
@@ -301,12 +278,11 @@ function MeshEditor() {
           setActiveLayerId(restoredLayers[0]?.id);
           setAssetId(backup.assetId || "Projeto Recuperado");
 
-          return; // Finaliza aqui se restaurou com sucesso
+          return; 
         } catch (e) {
           console.error("❌ Erro ao restaurar backup:", e);
         }
       } else {
-        // 3. Se NÃO houver backup, aí sim criamos a Camada Base do zero
         console.log("🆕 Nenhum backup encontrado. Criando projeto novo...");
         const baseLayer = createLayer(Date.now(), "Camada Base");
 
@@ -325,7 +301,7 @@ function MeshEditor() {
     };
     initApp();
     // eslint-disable-next-line
-  }, []); // Executa apenas uma vez ao montar o componente
+  }, []); 
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -333,13 +309,13 @@ function MeshEditor() {
         if (event.key.toLowerCase() === "z") {
           event.preventDefault();
           if (event.shiftKey) {
-            handleRedo(); // Ctrl + Shift + Z
+            handleRedo(); 
           } else {
-            handleUndo(); // Ctrl + Z
+            handleUndo(); 
           }
         } else if (event.key.toLowerCase() === "y") {
           event.preventDefault();
-          handleRedo(); // Ctrl + Y
+          handleRedo(); 
         }
         return;
       }
@@ -371,7 +347,7 @@ function MeshEditor() {
   }, [handleUndo, handleRedo]);
 
   useEffect(() => {
-    // Impede de salvar um projeto vazio por cima de um backup existente no primeiro render
+ 
     if (layers.length === 0) return;
 
     const timeout = setInterval(() => {
@@ -392,16 +368,16 @@ function MeshEditor() {
           "⚠️ Falha no autosave (provavelmente limite de 5MB do LocalStorage excedido)",
         );
       }
-    }, 2000); // Salva 2 segundos após a última alteração
+    }, 2000);
 
     return () => clearTimeout(timeout);
-  }); // <--- OBRIGATÓRIO: observar mudanças aqui
+  }); 
 
   return (
     <div className="App">
       <BrushCursor size={brushSize} visible={true} />
 
-      <Toolbar
+      <ToolbarGeneral
         NewTemplate={NewTemplate}
         scene={scene}
         myAmbLight={ambientLight}
@@ -552,18 +528,13 @@ function MeshEditor() {
       />
       <Analytics />
       <div id="portal-root"></div>
-      <div className="import-section" >
-        <input
-          type="file"
-          id="model-upload"
-          accept=".obj,.fbx"
-          onChange={handleFileUpload}
-          style={{ display: "none" }}
-        />
-        <button style={{zIndex: "10000",position:"absolute"}} onClick={() => document.getElementById("model-upload").click()}>
-          Carregar Modelo (.OBJ / .FBX)
-        </button>
-      </div>
+                        <input
+                    type="file"
+                    id="model-upload"
+                    accept=".obj,.fbx"
+                    onChange={handleFileUpload}
+                    style={{ display: "none" }}
+                  />
     </div>
   );
 }

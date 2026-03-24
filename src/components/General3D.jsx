@@ -8,9 +8,8 @@ import {
   performBucketFill,
   performWrapLine,
 } from "../utils/paintHelper";
-import { extractUVLines } from "../utils/uvHelper";
-import { createNewCanvas, loadTemplateToCanvas } from "../utils/canvasHelpers";
-import { applyAutomaticShading } from "../utils/shadingHelper";
+import { generateAutoUVs } from "../utils/uvHelper";
+import {  createNewCanvas, loadTemplateToCanvas } from "../utils/canvasHelpers";
 import { isMobile } from "../utils/mobile";
 const General3D = ({
   brushColor,
@@ -33,7 +32,6 @@ const General3D = ({
   setAmbientLight,
   setDirLight,
   bodyPartsVisibility,
-  onUVsExtracted,
   isMirrorEnabled,
   onModelLoaded,
   onDownloadTexture,
@@ -62,50 +60,28 @@ const General3D = ({
   const textureRef = useRef(null);
   const lastPaintTarget = useRef({ x: null, y: null, objectId: null });
   const lastPaintTargetM = useRef({ x: null, y: null, objectId: null });
-  const mixerRef = useRef(null); // Controla as animações
-  const clockRef = useRef(new THREE.Clock()); // Necessário para calcular o tempo da animação
+  const mixerRef = useRef(null); 
   const beforeData = useRef(null);
-
-  const updateUVOverlay = (sceneObject) => {
-    if (!onUVsExtracted) return;
-    const allLines = [];
-    sceneObject.traverse((child) => {
-      if (child.isMesh && child.geometry) {
-        const meshLines = extractUVLines(child.geometry);
-        allLines.push(...meshLines);
-      }
-    });
-    onUVsExtracted(allLines);
-  };
-
-  // Receba bodyPartsVisibility como prop no Scene3D
   useEffect(() => {
     if (modelRef.current && bodyPartsVisibility) {
       modelRef.current.traverse((child) => {
         if (child.isMesh && bodyPartsVisibility[child.name] !== undefined) {
-          // Liga ou desliga a visibilidade do mesh no Three.js
           child.visible = bodyPartsVisibility[child.name];
         }
       });
     }
-  }, [bodyPartsVisibility]); // Executa sempre que você clica no olhinho na interface
-
+  }, [bodyPartsVisibility]); 
   const applyTexturesToModel = async () => {
     if (!modelRef.current || !finalComposition || !finalComposition.main) return;
-
-    // Se você for usar shading, aplique no canvas main
-    // const shadedCanvas = await applyAutomaticShading(finalComposition.main.canvas, shadingOpacity);
-    
-    // Cria a textura a partir da composição final atualizada
-    const mainTexture = new THREE.CanvasTexture(finalComposition.main.canvas);
+    const finalCanvas = createNewCanvas(bodyColor,1024,1024)
+    finalCanvas.ctx.drawImage(finalComposition.main.canvas,0,0)
+    const mainTexture = new THREE.CanvasTexture(finalCanvas.canvas);
     mainTexture.magFilter = THREE.NearestFilter;
     mainTexture.minFilter = THREE.NearestFilter;
     mainTexture.flipY = true;
     mainTexture.needsUpdate = true;
-
     modelRef.current.traverse((child) => {
       if (child.isMesh) {
-        // Preserva o material original se existir, caso contrário cria um novo
         child.material = new THREE.MeshBasicMaterial({
           map: mainTexture,
           side: THREE.DoubleSide,
@@ -119,11 +95,9 @@ const General3D = ({
   useEffect(() => {
     if (controlsRef.current) {
       if (!isPaintMode && !isBucketMode && !isEraser && !isWrapMode) {
-        // MODO CÂMERA: 1 dedo rotaciona, Mouse Esquerdo rotaciona
         controlsRef.current.touches.ONE = THREE.TOUCH.ROTATE;
         controlsRef.current.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
       } else {
-        // MODO PINTURA: 1 dedo NÃO move a câmera, Mouse Esquerdo NÃO move a câmera
         controlsRef.current.touches.ONE = null;
         controlsRef.current.mouseButtons.LEFT = null;
       }
@@ -159,26 +133,18 @@ const General3D = ({
     controlsRef.current.target.copy(center);
     controlsRef.current.update();
   };
-
   const animate = () => {
     requestRef.current = requestAnimationFrame(animate);
-    // Atualiza controles de câmera (OrbitControls)
     if (controlsRef.current) {
       controlsRef.current.update();
     }
-
-    // Força atualização da textura se houver pintura ativa
     if (textureRef.current) {
       textureRef.current.needsUpdate = true;
     }
-
-    // Renderiza a cena final
     if (rendererRef.current && sceneRef.current && cameraRef.current) {
       rendererRef.current.render(sceneRef.current, cameraRef.current);
     }
   };
-
-  // 1. Inicialização da Cena (Roda apenas uma vez)
   useEffect(() => {
     const mountNode = mountRef.current;
     const scene = new THREE.Scene();
@@ -229,15 +195,12 @@ const General3D = ({
 
     if (layers.length > 1) {
       const baseLayer = layers[0];
-
       if (baseLayer.channels.shirt?.ctx) {
         loadTemplateToCanvas(
           baseLayer.channels.shirt.ctx,
           "/templates/TemplateShirt.png",
         );
       }
-
-      // Carrega o template de Calça no canal pants
       if (baseLayer.channels.pants?.ctx) {
         loadTemplateToCanvas(
           baseLayer.channels.pants.ctx,
@@ -245,7 +208,6 @@ const General3D = ({
         );
       }
     }
-
     animate();
     const handleResize = () => {
       if (cameraRef.current && rendererRef.current) {
@@ -255,7 +217,6 @@ const General3D = ({
       }
     };
     window.addEventListener("resize", handleResize);
-
     return () => {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(requestRef.current);
@@ -278,82 +239,83 @@ const General3D = ({
   }, [isAnimating]);
 
 useEffect(() => {
-  // 1. Verificação de segurança: só roda se houver uma URL e se não for a mesma já carregada
-  if (!uploadedModel?.url || modelRef.current?.userData?.sourceUrl === uploadedModel.url) {
-    return;
-  }
-
-  const loader = uploadedModel.extension === "fbx" ? new FBXLoader() : new OBJLoader();
-  
-  // Use a URL do objeto carregado, não o path fixo
-  const modelPath = uploadedModel.url; 
-
-  loader.load(
-    modelPath,
-    (object) => {
-      if (modelRef.current) sceneRef.current.remove(modelRef.current);
-        let defaultTexture = null;
-      // Se for OBJ, o 'object' é o Group. Se for FBX/GLTF, pode estar em object.scene
-      const model = object.scene || object;
-
-      // Guardamos a URL no userData para evitar recarregamento desnecessário
-      model.userData.sourceUrl = uploadedModel.url;
-
-      // Configuração de Animação
-      if (object.animations && object.animations.length) {
-        mixerRef.current = new THREE.AnimationMixer(model);
-        const action = mixerRef.current.clipAction(object.animations[0]);
-        action.play();
-      }
-
-      // Centralização e Escala (Otimizado)
-      const box = new THREE.Box3().setFromObject(model);
-      const size = box.getSize(new THREE.Vector3());
-      const center = box.getCenter(new THREE.Vector3());
-      model.position.sub(center);
-      const maxAxis = Math.max(size.x, size.y, size.z);
-      model.scale.setScalar(2.0 / maxAxis);
-
-      const parts = [];
-      // Aplicar material imediatamente (evite o setTimeout se possível)
-      model.traverse((child) => {
-        if (child.isMesh && finalComposition?.main?.canvas) {
-          parts.push(child.name);
-          child.material = new THREE.MeshStandardMaterial({
-            map: new THREE.CanvasTexture(finalComposition.main.canvas), // Use CanvasTexture
-          });
-          child.material.map.needsUpdate = true;
+    if (!uploadedModel?.url || modelRef.current?.userData?.sourceUrl === uploadedModel.url) {
+      return;
+    }
+    const loader = uploadedModel.extension === "fbx" ? new FBXLoader() : new OBJLoader();
+    const modelPath = uploadedModel.url;
+    loader.load(
+      modelPath,
+      (object) => {
+        if (modelRef.current) sceneRef.current.remove(modelRef.current);
+        const model = object.scene || object;
+        model.userData.sourceUrl = uploadedModel.url;
+        if (object.animations && object.animations.length) {
+          mixerRef.current = new THREE.AnimationMixer(model);
+          const action = mixerRef.current.clipAction(object.animations[0]);
+          action.play();
         }
-      });
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+        const maxAxis = Math.max(size.x, size.y, size.z);
+        model.scale.setScalar(2.0 / maxAxis);
+        let foundImage = null;
+        model.traverse((child) => {
+          if (child.isMesh && child.material?.map?.image) {
+            foundImage = child.material.map.image;
+          }
+        });
+        const activeLayer = layers.find((l) => l.id === activeLayerId) || layers[0];
+        if (activeLayer && activeLayer.channels.main) {
+          const ctx = activeLayer.channels.main.ctx;
+          const canvas = activeLayer.channels.main.canvas;
 
-      // Atualiza os estados finais
-      if (onModelLoaded) onModelLoaded(parts);
-      
-      modelRef.current = model;
-      sceneRef.current.add(model);
-      
-      if (fitCameraToObject) fitCameraToObject(model);
-      
-      // Chame as atualizações de estado APENAS aqui no final do sucesso
-      setModel(model); 
-      handleModelLoaded(model.children);
-      
-      // Se onPaintEnd altera o pai, ele só deve rodar quando tudo terminar
-      if (onPaintEnd) onPaintEnd(); 
-    },
-    undefined,
-    (error) => console.error("Erro ao carregar modelo:", error)
-  );
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 3. Depender apenas da URL evita loops por referência de objeto
-}, [uploadedModel?.url, finalComposition]);
-
+          if (foundImage) {
+            if (foundImage.complete) {
+              ctx.drawImage(foundImage, 0, 0, canvas.width, canvas.height);
+              if (onPaintEnd) onPaintEnd(); 
+            } else {
+              foundImage.onload = () => {
+                ctx.drawImage(foundImage, 0, 0, canvas.width, canvas.height);
+                if (onPaintEnd) onPaintEnd();
+              };
+            }
+          } else {
+          //  ctx.fillStyle = "#ffffff";
+          //  ctx.fillRect(0, 0, canvas.width, canvas.height);
+         //   if (onPaintEnd) onPaintEnd(); 
+          }
+        }
+        const parts = [];
+        model.traverse((child) => {
+          if (child.isMesh && finalComposition?.main?.canvas) {
+            parts.push(child.name);
+         //   child.geometry = generateAutoUVs(child.geometry);
+            child.material = new THREE.MeshStandardMaterial({
+              map: new THREE.CanvasTexture(finalComposition.main.canvas), // Use CanvasTexture
+            });
+            child.material.map.needsUpdate = true;
+          }
+        });
+        if (onModelLoaded) onModelLoaded(parts);
+        modelRef.current = model;
+        sceneRef.current.add(model);
+        if (fitCameraToObject) fitCameraToObject(model);
+        setModel(model);
+        handleModelLoaded(model.children);
+      },
+      undefined,
+      (error) => console.error("Erro ao carregar modelo:", error)
+    );
+  }, [uploadedModel?.url]);
   const paint = (e) => {
     if (!modelRef.current || !activeLayerId) return;
-
     const targetLayer = layers.find((l) => l.id === activeLayerId);
     if (!targetLayer || !targetLayer.channels) return;
-
     mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
     raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
@@ -367,23 +329,18 @@ useEffect(() => {
       objectsToTest,
       false,
     );
-
     mouseRef.current.x =
       ((window.innerWidth - e.clientX) / window.innerWidth) * 2 - 1;
     mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
     raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
-
     const mintersects = raycasterRef.current.intersectObjects(
       objectsToTest,
       false,
     );
-
     if (intersects.length > 0 && intersects[0].uv) {
       const intersect = intersects[0];
       const mintersect = mintersects[0];
       let targetChannel = "main";
-
-      console.log(intersect.object);
       setActiveChannel(targetChannel);
       const isSameMember =
         lastPaintTarget.current.objectId === intersect.object.id;
@@ -397,11 +354,10 @@ useEffect(() => {
       const CANVAS_W = 1024;
       const CANVAS_H = 1024;
 
-      const x = intersect.uv.x * 585;
-      const y = (1 - intersect.uv.y) * 559;
-      const mx = mintersect ? mintersect.uv.x * 585 : null;
-      const my = mintersect ? (1 - mintersect.uv.y) * 559 : null;
-
+      const x = intersect.uv.x * 1024;
+      const y = (1 - intersect.uv.y) * 1024;
+      const mx = mintersect ? mintersect.uv.x * 1024 : null;
+      const my = mintersect ? (1 - mintersect.uv.y) * 1024 : null;
       const isBackFace = () => {
         return (
           intersect.face &&
@@ -410,8 +366,6 @@ useEffect(() => {
           intersect.face.c < 6
         );
       };
-
-      // 4. Face Lock (Recorte UV)
       if (faceLockMode && intersect.face) {
         layerCtx.save();
         const uvAttr = intersect.object.geometry.attributes.uv;
@@ -427,8 +381,6 @@ useEffect(() => {
         layerCtx.closePath();
         layerCtx.clip();
       }
-      console.log(intersect.face);
-
       if (isBucketMode) {
         if (isMirrorEnabled) {
           performBucketFill(
@@ -455,7 +407,6 @@ useEffect(() => {
           );
           return;
         }
-
         performBucketFill(
           layerCtx,
           intersect.face,
@@ -469,7 +420,6 @@ useEffect(() => {
         );
       } else if (isWrapMode) {
         const pixelY = (1 - intersect.uv.y) * 559;
-        // Executa a linha inteira ao invés do pincel normal
         performWrapLine(
           layerCtx,
           x,
@@ -482,11 +432,11 @@ useEffect(() => {
         );
       } else {
         const hit = intersects[0];
-        const pressure = isMobile() ? 1 : e.pressure; // Fallback para dispositivos sem suporte a pressão
+        const pressure = isMobile() ? 1 : e.pressure; 
         const distance = hit.distance;
         const distanceFactor = distance * 0.3;
 
-        if (isMirrorEnabled && isBackFace()) {
+        if (isMirrorEnabled) {
           performPaint(
             layerCtx,
             x,
@@ -537,8 +487,6 @@ useEffect(() => {
       if (faceLockMode) layerCtx.restore();
     }
   };
-
-  // 5. Gerenciamento de Eventos de Mouse/Touch
   const handlePointerDown = (e) => {
     if (isEyedropper) {
       if (!modelRef.current) return;
@@ -576,10 +524,10 @@ useEffect(() => {
           pixelData[3] / 255
         })`;
         setBrushColor(pickedColor);
-        setIsEyedropper(false); // Volta para o modo pintura após escolher a cor
-        onPaintEnd(); // Salva o histórico ou compõe as camadas
+        setIsEyedropper(false); 
+        onPaintEnd(); 
       }
-      return; // Sai da função para não iniciar a pintura
+      return; 
     }
     if (
       e.button !== 0 ||
@@ -589,49 +537,37 @@ useEffect(() => {
     lastPaintTarget.current = { x: null, y: null, objectId: null };
     const activeLayer = layers.find((l) => l.id === activeLayerId);
     if (activeLayer) {
-      // Tira a "foto" de como o canvas está antes do risco
       beforeData.current = activeLayer.channels.main.ctx.getImageData(
         0,
         0,
         1024,
         1024,
       );
-      paint(e); // Pinta o ponto inicial imediatamente
+      paint(e); 
     }
     const onPointerMove = (ev) => {
-      if (ev.buttons !== 1) return; // Verifica se o botão esquerdo ainda está pressionado
+      if (ev.buttons !== 1) return; 
       paint(ev);
-      onPaintEnd(); // Salva o histórico ou compõe as camadas
+      onPaintEnd(); 
     };
-
   const onPointerUp = () => {
   window.removeEventListener("pointermove", onPointerMove);
   window.removeEventListener("pointerup", onPointerUp);
-
   const activeLayer = layers.find((l) => l.id === activeLayerId);
-  
   if (activeLayer && beforeData.current) {
-    // Captura o estado DEPOIS da pintura
     const afterData = activeLayer.channels.main.ctx.getImageData(0, 0, 1024, 1024);
-
-    // Envia para o histórico
     saveHistoryAction(
       activeLayerId,
-      beforeData.current, // O que tínhamos antes do clique
-      afterData           // O que temos agora (opcional, mas bom para o Redo)
+      beforeData.current, 
+      afterData           
     );
-
     beforeData.current = null;
   }
-  
-  onPaintEnd(); // Renderiza a cena 3D com a nova pintura
+  onPaintEnd(); 
 };
-
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
   };
-
-  // 6. Download da Textura
   useEffect(() => {
     if (onDownloadTexture && finalComposition) {
       onDownloadTexture.current = () => {
@@ -654,7 +590,7 @@ useEffect(() => {
         top: 0,
         left: 0,
         cursor: "none",
-        touchAction: "none", // Previne scroll ao pintar no mobile
+        touchAction: "none", 
       }}
     />
   );
