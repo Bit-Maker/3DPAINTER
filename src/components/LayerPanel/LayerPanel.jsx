@@ -55,7 +55,7 @@ const LayerPanel = ({
           <div className="d-flex align-items-center gap-2 mb-2">
             <div className="preview-container bg-white rounded border border-light overflow-hidden" style={{ width: '32px', height: '32px', flexShrink: 0 }}>
               <img 
-                src={layer.channels.shirt.canvas.toDataURL()} 
+                src={layer.channels.shirt?.canvas.toDataURL()} 
                 alt={`Layer Miniature ${layer.name}`} 
                 className="w-100 h-100"
                 style={{ objectFit: 'contain' }}

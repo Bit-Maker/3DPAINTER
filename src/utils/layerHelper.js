@@ -15,20 +15,28 @@ export const createLayer = (id, name = "Nova Camada") => {
 
 export const composeLayers = async (layers, finalComposition) => {
   ["shirt", "pants"].forEach((type) => {
-    const finalCtx = finalComposition[type].canvas.getContext("2d");
+    const channel = finalComposition[type]? finalComposition[type] : finalComposition.main
+    const finalCtx = channel.canvas.getContext("2d");
 
     finalCtx.clearRect(0, 0, 585, 559);
 
     layers.forEach((layer) => {
       if (layer.visible) {
-        finalCtx.globalAlpha = layer.opacity;
-        finalCtx.drawImage(layer.channels[type].canvas, 0, 0);
+        if(layer.channels.main) {
+          finalCtx.globalAlpha = layer.opacity;
+          finalCtx.drawImage(layer.channels.main.canvas, 0, 0);
+
+        }else {
+          finalCtx.globalAlpha = layer.opacity;
+          finalCtx.drawImage(layer.channels[type].canvas, 0, 0);
+
+        }
       }
     });
   });
 
   const shader = await loadShadingTemplate();
-  if (!shader) return;
+  if (!shader || finalComposition.main) return;
   const opacity = getShaderOpacity();
 
   finalComposition.shirt.canvas.getContext("2d").globalAlpha = opacity;
