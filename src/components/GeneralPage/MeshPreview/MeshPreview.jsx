@@ -17,19 +17,47 @@ const MeshPreview = ({
   setIsEyedropper,
   setBrushColor,
 }) => {
-  // Agora temos apenas um canvas para a textura inteira
   const mainCanvasRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Estados de controle do pincel
   const isDrawing = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const beforePaintData = useRef(null);
 
-  // RESOLUÇÃO DA TEXTURA GENÉRICA
   const CANVAS_SIZE = 1024;
 
-  // Sincroniza o Preview com a Composição Final
+  // --- ESTILOS CYBER HUD ---
+  const glassPanelStyle = {
+    top: '75px',
+    right: '20px',
+    width: '280px',
+    zIndex: 1020,
+    background: 'rgba(10, 10, 10, 0.8)',
+    backdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '16px',
+    maxHeight: 'calc(100vh - 430px)', // Evita colidir com o LayerPanel no rodapé
+    display: 'flex',
+    flexDirection: 'column'
+  };
+
+  const checkerboardStyle = {
+    position: 'relative',
+    backgroundColor: '#1a1a1a',
+    backgroundImage: `
+      linear-gradient(45deg, #252525 25%, transparent 25%),
+      linear-gradient(-45deg, #252525 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #252525 75%),
+      linear-gradient(-45deg, transparent 75%, #252525 75%)
+    `,
+    backgroundSize: '12px 12px',
+    backgroundPosition: '0 0, 0 6px, 6px -6px, -6px 0px',
+    border: '1px solid rgba(0, 229, 255, 0.2)',
+    borderRadius: '12px',
+    overflow: 'hidden'
+  };
+
+  // --- LÓGICA DE SINCRONIZAÇÃO E PINTURA ---
   useEffect(() => {
     if (!finalComposition || !finalComposition.main) return;
 
@@ -40,7 +68,6 @@ const MeshPreview = ({
     }
   }, [finalComposition, triggerTextureUpdate]);
 
-  // Calcula a posição do mouse em relação ao tamanho real da textura (1024x1024)
   const getMousePos = (e, canvas) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -51,40 +78,27 @@ const MeshPreview = ({
     };
   };
 
-  // Função auxiliar para converter RGB do Canvas para HEX do Pincel
   const rgbToHex = (r, g, b) => {
-    return (
-      "#" +
-      [r, g, b]
-        .map((x) => {
-          const hex = x.toString(16);
-          return hex.length === 1 ? "0" + hex : hex;
-        })
-        .join("")
-    );
+    return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join("");
   };
 
   const startDrawing = (e) => {
     const canvas = mainCanvasRef.current;
     if (!canvas) return;
-    
+
     const pos = getMousePos(e, canvas);
 
-    // --- LÓGICA DO CONTA-GOTAS ---
     if (isEyedropper) {
       const ctx = canvas.getContext("2d");
       const pixel = ctx.getImageData(pos.x, pos.y, 1, 1).data;
 
       if (pixel[3] > 0) {
-        const hexColor = rgbToHex(pixel[0], pixel[1], pixel[2]);
-        setBrushColor(hexColor);
+        setBrushColor(rgbToHex(pixel[0], pixel[1], pixel[2]));
       }
-
       setIsEyedropper(false);
       return;
     }
 
-    // --- LÓGICA NORMAL DE DESENHO ---
     const activeLayer = layers?.find((l) => l.id === activeLayerId);
     if (!activeLayer || !activeLayer.visible) return;
 
@@ -104,8 +118,8 @@ const MeshPreview = ({
     const canvas = mainCanvasRef.current;
     const currentPos = getMousePos(e, canvas);
 
-    const layerCtx = activeLayer.channels.main.ctx; // Contexto da camada real
-    const previewCtx = canvas.getContext("2d"); // Contexto visual temporário
+    const layerCtx = activeLayer.channels.main.ctx;
+    const previewCtx = canvas.getContext("2d");
 
     const applyStroke = (ctx) => {
       ctx.beginPath();
@@ -127,7 +141,6 @@ const MeshPreview = ({
       ctx.stroke();
     };
 
-    // Pinta nos dois contextos ao mesmo tempo
     applyStroke(layerCtx);
     applyStroke(previewCtx);
 
@@ -139,18 +152,15 @@ const MeshPreview = ({
     isDrawing.current = false;
 
     const activeLayer = layers?.find((l) => l.id === activeLayerId);
-    
-    // Salva a ação no histórico (Adequado para a nova função saveHistoryAction)
+
     if (activeLayer && saveHistoryAction && beforePaintData.current) {
       const ctx = activeLayer.channels.main.ctx;
       const afterPaintData = ctx.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-      
-      // Enviando apenas o ID da camada, o antes e o depois
+
       saveHistoryAction(activeLayerId, beforePaintData.current, afterPaintData);
       beforePaintData.current = null;
     }
 
-    // Atualiza o modelo 3D
     if (onPaintEnd) onPaintEnd();
   };
 
@@ -159,7 +169,7 @@ const MeshPreview = ({
     if (!canvas) return;
     const link = document.createElement("a");
     link.href = canvas.toDataURL("image/png");
-    link.download = `textura_albedo.png`;
+    link.download = `mesh_texture_albedo.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -172,38 +182,26 @@ const MeshPreview = ({
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
-        // Validação da resolução (Avisa, mas não impede caso o usuário queira esticar)
         if (img.width !== CANVAS_SIZE || img.height !== CANVAS_SIZE) {
-          console.warn(`Aviso: A imagem importada (${img.width}x${img.height}) será redimensionada para ${CANVAS_SIZE}x${CANVAS_SIZE}.`);
+          console.warn(`Redimensionando textura importada para ${CANVAS_SIZE}x${CANVAS_SIZE}`);
         }
-        
-        // Passamos "main" e a imagem em base64
         importTemplate("main", event.target.result);
         setTriggerTextureUpdate((prev) => prev + 1);
-        if (onPaintEnd) onPaintEnd(); // Força a atualização no 3D
+        if (onPaintEnd) onPaintEnd();
       };
       img.src = event.target.result;
     };
     reader.readAsDataURL(file);
-    e.target.value = ""; // Reseta o input para permitir importar o mesmo arquivo depois
+    e.target.value = "";
   };
 
   return (
-    <section
-      className="preview-sidebar position-fixed end-0 m-3 d-flex flex-column gap-3 custom-scrollbar"
-      style={{
-        top: "60px",
-        zIndex: 1020,
-        maxWidth: "25vw",
-        width: "300px",
-      }}
-      aria-label="Texture Preview"
-    >
+    <section style={glassPanelStyle} className="position-fixed shadow-lg overflow-hidden">
       <input
         type="file"
         ref={fileInputRef}
@@ -212,55 +210,67 @@ const MeshPreview = ({
         onChange={handleFileChange}
       />
 
-      <article className="card bg-dark border-secondary shadow flex-shrink-0">
-        <header className="card-header py-1 border-secondary bg-black bg-opacity-25 text-center">
-          <span
-            className="fw-bold text-uppercase text-primary"
-            style={{ fontSize: "10px", letterSpacing: "1px" }}
-          >
-            Texture Map
-          </span>
-        </header>
+      {/* HEADER DA TEXTURA */}
+      <div className="px-3 py-2 bg-black bg-opacity-30 d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-20">
+        <span style={{ fontSize: '10px', fontWeight: '800', color: '#00E5FF', letterSpacing: '1.5px' }}>
+          TEXTURE PREVIEW
+        </span>
+        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00E5FF', boxShadow: '0 0 8px #00E5FF' }}></div>
+      </div>
 
-        <div className="card-body p-1">
-          <figure className="m-0 border border-secondary rounded overflow-hidden bg-white">
-            <canvas
-              ref={mainCanvasRef}
-              width={CANVAS_SIZE}
-              height={CANVAS_SIZE}
-              className="img-fluid d-block mx-auto"
-              style={{
-                cursor: "crosshair",
-                touchAction: "none",
-                maxHeight: "35vh", // Aumentado um pouco já que agora é um só
-                objectFit: "contain",
-                backgroundColor: "#fff", // Fundo branco padrão
-              }}
-              onPointerDown={startDrawing}
-              onPointerMove={draw}
-              onPointerUp={stopDrawing}
-              onPointerLeave={stopDrawing}
-              role="img"
-              aria-label="Draw Texture Area"
-            />
-          </figure>
+      {/* ÁREA DO CANVAS (CHECKERBOARD) */}
+      <div className="p-2 flex-grow-1 overflow-auto custom-scrollbar-y">
+        <div style={checkerboardStyle}>
+          <canvas
+            ref={mainCanvasRef}
+            width={CANVAS_SIZE}
+            height={CANVAS_SIZE}
+            className="w-100 d-block"
+            style={{
+              cursor: isEyedropper ? "copy" : "crosshair",
+              touchAction: "none",
+              maxHeight: "35vh",
+              objectFit: "contain",
+            }}
+            onPointerDown={startDrawing}
+            onPointerMove={draw}
+            onPointerUp={stopDrawing}
+            onPointerLeave={stopDrawing}
+          />
         </div>
+      </div>
 
-        <footer className="card-footer p-1 d-grid gap-1 border-secondary">
-          <button
-            className="btn btn-xs btn-outline-info"
-            onClick={handleImportClick}
-          >
-            Import Texture
-          </button>
-          <button
-            className="btn btn-xs btn-primary"
-            onClick={downloadTexture}
-          >
-            Download Texture
-          </button>
-        </footer>
-      </article>
+      {/* BOTÕES DE AÇÃO */}
+      <div className="p-2 d-flex gap-2 border-top border-secondary border-opacity-10">
+        <button
+          onClick={handleImportClick}
+          className="btn btn-sm flex-fill fw-bold rounded-3"
+          style={{
+            fontSize: '11px',
+            color: '#00E5FF',
+            border: '1px solid rgba(0, 229, 255, 0.3)',
+            background: 'rgba(0, 229, 255, 0.05)'
+          }}
+        >
+          Import
+        </button>
+        <button
+          onClick={downloadTexture}
+          className="btn btn-sm flex-fill fw-bold rounded-3 text-black"
+          style={{
+            fontSize: '11px',
+            background: '#00E5FF',
+            boxShadow: '0 0 10px rgba(0, 229, 255, 0.2)'
+          }}
+        >
+          Export PNG
+        </button>
+      </div>
+
+      <style>{`
+        .custom-scrollbar-y::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar-y::-webkit-scrollbar-thumb { background: rgba(0, 229, 255, 0.2); border-radius: 10px; }
+      `}</style>
     </section>
   );
 };

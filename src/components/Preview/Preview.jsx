@@ -5,14 +5,12 @@ const Preview = ({
   triggerTextureUpdate,
   setTriggerTextureUpdate,
   importTemplate,
-  // --- NOVAS PROPS NECESSÁRIAS ---
   layers,
   activeLayerId,
   brushColor,
   brushSize,
   brushOpacity,
   isEraser,
-  onPaintEnd, // O mesmo updateComposition usado no 3D
   saveHistoryAction,
   isEyedropper,
   setIsEyedropper,
@@ -23,15 +21,60 @@ const Preview = ({
   const fileInputRef = useRef(null);
   const activeType = useRef("shirt");
 
-  // Estados de controle do pincel
   const isDrawing = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const beforePaintData = useRef(null);
 
-  // Sincroniza o Preview com a Composição Final
+  // --- ESTILOS CYBER-HUD ---
+  const sidebarStyle = {
+    top: '70px',
+    right: '20px',
+    zIndex: 1020,
+    width: '260px',
+    maxHeight: 'calc(100vh - 420px)', // Evita colisão com o LayerPanel embaixo
+    paddingRight: '5px'
+  };
+
+  const glassCardStyle = {
+    background: 'rgba(15, 15, 15, 0.8)',
+    backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    marginBottom: '15px'
+  };
+
+  const canvasContainerStyle = {
+    position: 'relative',
+    backgroundColor: '#1a1a1a',
+    backgroundImage: `
+      linear-gradient(45deg, #252525 25%, transparent 25%),
+      linear-gradient(-45deg, #252525 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #252525 75%),
+      linear-gradient(-45deg, transparent 75%, #252525 75%)
+    `,
+    backgroundSize: '10px 10px',
+    backgroundPosition: '0 0, 0 5px, 5px -5px, -5px 0px',
+    border: '1px solid rgba(0, 229, 255, 0.2)',
+    borderRadius: '8px'
+  };
+
+  const actionBtnStyle = (isPrimary) => ({
+    fontSize: '10px',
+    fontWeight: '800',
+    letterSpacing: '1px',
+    padding: '6px 0',
+    borderRadius: '6px',
+    transition: 'all 0.2s ease',
+    backgroundColor: isPrimary ? '#00E5FF' : 'transparent',
+    color: isPrimary ? '#000' : '#00E5FF',
+    border: `1px solid ${isPrimary ? '#00E5FF' : 'rgba(0, 229, 255, 0.3)'}`,
+    textTransform: 'uppercase'
+  });
+
+  // --- LÓGICA DE CANVASES ---
   useEffect(() => {
     if (!finalComposition || !finalComposition.shirt || !finalComposition.pants) return;
-
     const updatePreviewCanvas = (type, ref) => {
       if (ref.current && finalComposition[type]?.canvas) {
         const ctx = ref.current.getContext("2d");
@@ -39,12 +82,10 @@ const Preview = ({
         ctx.drawImage(finalComposition[type].canvas, 0, 0);
       }
     };
-
     updatePreviewCanvas("shirt", shirtCanvasRef);
     updatePreviewCanvas("pants", pantsCanvasRef);
   }, [finalComposition, triggerTextureUpdate]);
 
-  // Calcula a posição do mouse em relação ao tamanho real do template (585x559)
   const getMousePos = (e, canvas) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -55,64 +96,47 @@ const Preview = ({
     };
   };
 
- // Função auxiliar para converter RGB do Canvas para HEX do Pincel
-const rgbToHex = (r, g, b) => {
-  return "#" + [r, g, b].map(x => {
-    const hex = x.toString(16);
-    return hex.length === 1 ? "0" + hex : hex;
-  }).join("");
-};
+  const rgbToHex = (r, g, b) => {
+    return "#" + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join("");
+  };
 
-// Modifique o evento de clique inicial
-const startDrawing = (e, type) => {
-  const canvas = type === "shirt" ? shirtCanvasRef.current : pantsCanvasRef.current;
-  const pos = getMousePos(e, canvas);
+  const startDrawing = (e, type) => {
+    const canvas = type === "shirt" ? shirtCanvasRef.current : pantsCanvasRef.current;
+    const pos = getMousePos(e, canvas);
 
-  // --- LÓGICA DO CONTA-GOTAS ---
-  if (isEyedropper) {
-    const ctx = canvas.getContext("2d");
-    // Pega exatamente 1 pixel na posição do mouse
-    const pixel = ctx.getImageData(pos.x, pos.y, 1, 1).data; 
-    
-    // Se o alpha (transparência) for maior que 0, copia a cor
-    if (pixel[3] > 0) {
-      const hexColor = rgbToHex(pixel[0], pixel[1], pixel[2]);
-      setBrushColor(hexColor);
+    if (isEyedropper) {
+      const ctx = canvas.getContext("2d");
+      const pixel = ctx.getImageData(pos.x, pos.y, 1, 1).data; 
+      if (pixel[3] > 0) {
+        setBrushColor(rgbToHex(pixel[0], pixel[1], pixel[2]));
+      }
+      setIsEyedropper(false);
+      return;
     }
-    
-    setIsEyedropper(false); // Desativa o conta-gotas após o uso (UX padrão)
-    return; // Para a execução aqui para não desenhar
-  }
 
-  // --- LÓGICA NORMAL DE DESENHO (se o conta-gotas não estiver ativo) ---
-  const activeLayer = layers?.find((l) => l.id === activeLayerId);
-  if (!activeLayer || !activeLayer.visible) return;
+    const activeLayer = layers?.find((l) => l.id === activeLayerId);
+    if (!activeLayer || !activeLayer.visible) return;
 
-  isDrawing.current = true;
-  lastPos.current = pos;
-
-  const ctx = activeLayer.channels[type].ctx;
-  beforePaintData.current = ctx.getImageData(0, 0, 585, 559);
-};
+    isDrawing.current = true;
+    lastPos.current = pos;
+    beforePaintData.current = activeLayer.channels[type].ctx.getImageData(0, 0, 585, 559);
+  };
 
   const draw = (e, type) => {
     if (!isDrawing.current) return;
-
     const activeLayer = layers?.find((l) => l.id === activeLayerId);
     if (!activeLayer || !activeLayer.visible) return;
 
     const canvas = type === "shirt" ? shirtCanvasRef.current : pantsCanvasRef.current;
     const currentPos = getMousePos(e, canvas);
-    
-    const layerCtx = activeLayer.channels[type].ctx; // Contexto da camada real
-    const previewCtx = canvas.getContext("2d"); // Contexto visual temporário
+    const layerCtx = activeLayer.channels[type].ctx;
+    const previewCtx = canvas.getContext("2d");
 
     const applyStroke = (ctx) => {
       ctx.beginPath();
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.lineWidth = brushSize;
-
       if (isEraser) {
         ctx.globalCompositeOperation = "destination-out";
         ctx.strokeStyle = "rgba(0,0,0,1)";
@@ -121,30 +145,22 @@ const startDrawing = (e, type) => {
         ctx.globalAlpha = brushOpacity;
         ctx.strokeStyle = brushColor;
       }
-
       ctx.moveTo(lastPos.current.x, lastPos.current.y);
       ctx.lineTo(currentPos.x, currentPos.y);
       ctx.stroke();
     };
 
-    // Pinta nos dois contextos ao mesmo tempo para feedback instantâneo sem lag no 3D
     applyStroke(layerCtx);
     applyStroke(previewCtx);
-
     lastPos.current = currentPos;
   };
 
   const stopDrawing = (e, type) => {
     if (!isDrawing.current) return;
     isDrawing.current = false;
-
-    // Atualiza o 3D e renderiza as camadas finais apenas quando soltar o mouse
-
-    // Salva a ação no histórico
     const activeLayer = layers?.find((l) => l.id === activeLayerId);
     if (activeLayer && saveHistoryAction && beforePaintData.current) {
-      const ctx = activeLayer.channels[type].ctx;
-      const afterPaintData = ctx.getImageData(0, 0, 585, 559);
+      const afterPaintData = activeLayer.channels[type].ctx.getImageData(0, 0, 585, 559);
       saveHistoryAction(activeLayerId, type, beforePaintData.current, afterPaintData);
     }
   };
@@ -154,15 +170,13 @@ const startDrawing = (e, type) => {
     if (!canvas) return;
     const link = document.createElement("a");
     link.href = canvas.toDataURL("image/png");
-    link.download = `roblox_${type}_template.png`;
-    document.body.appendChild(link);
+    link.download = `roblox_${type}.png`;
     link.click();
-    document.body.removeChild(link);
   };
 
   const handleImportClick = (type) => {
     activeType.current = type;
-    if (fileInputRef.current) fileInputRef.current.click();
+    fileInputRef.current?.click();
   };
 
   const handleFileChange = (e) => {
@@ -173,7 +187,7 @@ const startDrawing = (e, type) => {
       const img = new Image();
       img.onload = () => {
         if (img.width !== 585 || img.height !== 559) {
-          alert(`Erro: A imagem deve ter exatamente 585x559 pixels.\nDetectado: ${img.width}x${img.height}`);
+          alert("Erro: Dimensões inválidas (585x559 obrigatório)");
           return;
         }
         importTemplate(activeType.current, event.target.result);
@@ -185,98 +199,60 @@ const startDrawing = (e, type) => {
     e.target.value = "";
   };
 
+  const TemplateSection = ({ type, canvasRef, label }) => (
+    <article style={glassCardStyle}>
+      <div className="px-3 py-1 bg-black bg-opacity-40 d-flex justify-content-between align-items-center">
+        <span style={{ fontSize: '9px', fontWeight: '800', color: '#00E5FF', letterSpacing: '1.5px' }}>
+          {label}
+        </span>
+        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00E5FF', boxShadow: '0 0 5px #00E5FF' }}></div>
+      </div>
+      
+      <div className="p-2">
+        <div style={canvasContainerStyle}>
+          <canvas
+            ref={canvasRef}
+            width={585}
+            height={559}
+            className="w-100 d-block"
+            style={{ cursor: isEyedropper ? "copy" : "crosshair", touchAction: "none", height: '140px', objectFit: 'contain' }}
+            onPointerDown={(e) => startDrawing(e, type)}
+            onPointerMove={(e) => draw(e, type)}
+            onPointerUp={(e) => stopDrawing(e, type)}
+            onPointerLeave={(e) => stopDrawing(e, type)}
+          />
+        </div>
+      </div>
+
+      <div className="px-2 pb-2 d-flex gap-2">
+        <button 
+          style={{ ...actionBtnStyle(false), flex: 1 }} 
+          onClick={() => handleImportClick(type)}
+        >
+          Import
+        </button>
+        <button 
+          style={{ ...actionBtnStyle(true), flex: 2 }} 
+          onClick={() => downloadTexture(type)}
+        >
+          Download PNG
+        </button>
+      </div>
+    </article>
+  );
+
   return (
-  <section 
-  className="preview-sidebar position-fixed end-0 m-3 d-flex flex-column gap-3 custom-scrollbar" 
-  style={{ 
-    top: '60px', 
-    zIndex: 1020, 
-    maxWidth: '25vw', 
-    width: '300px',
-    /* AJUSTES DE ALTURA */
-    maxHeight: '40vh', 
-    overflowY: 'auto', // Ativa a rolagem vertical se necessário
-    paddingRight: '5px' // Espaço para a scrollbar não encostar no card
-  }}
-  aria-label="Template's View"
->
-  {/* Input de Arquivo Escondido */}
-  <input
-    type="file"
-    ref={fileInputRef}
-    className="d-none"
-    accept="image/png, image/jpeg"
-    onChange={handleFileChange}
-  />
+    <section className="position-fixed overflow-y-auto custom-scrollbar-y" style={sidebarStyle}>
+      <input type="file" ref={fileInputRef} className="d-none" accept="image/png, image/jpeg" onChange={handleFileChange} />
+      
+      <TemplateSection type="shirt" canvasRef={shirtCanvasRef} label="SHIRT TEMPLATE" />
+      <TemplateSection type="pants" canvasRef={pantsCanvasRef} label="PANTS TEMPLATE" />
 
-  {/* Template: SHIRT */}
-  <article className="card bg-dark border-secondary shadow flex-shrink-0">
-    <header className="card-header py-1 border-secondary bg-black bg-opacity-25 text-center">
-      <span className="fw-bold text-uppercase text-primary" style={{ fontSize: '10px', letterSpacing: '1px' }}>Shirt Template</span>
-    </header>
-    
-    <div className="card-body p-1">
-      <figure className="m-0 border border-secondary rounded overflow-hidden bg-white">
-        <canvas
-          ref={shirtCanvasRef}
-          width={585}
-          height={559}
-          className="img-fluid d-block mx-auto"
-          style={{ cursor: "crosshair", touchAction: "none", maxHeight: '15vh', objectFit: 'contain' }}
-          onPointerDown={(e) => startDrawing(e, "shirt")}
-          onPointerMove={(e) => draw(e, "shirt")}
-          onPointerUp={(e) => stopDrawing(e, "shirt")}
-          onPointerLeave={(e) => stopDrawing(e, "shirt")}
-          role="img"
-          aria-label="Draw Shirt Area"
-        />
-      </figure>
-    </div>
-
-    <footer className="card-footer p-1 d-grid gap-1 border-secondary">
-      <button className="btn btn-xs btn-outline-info" onClick={() => handleImportClick("shirt")}>
-        Import
-      </button>
-      <button className="btn btn-xs btn-primary" onClick={() => downloadTexture("shirt")}>
-        Download Shirt
-      </button>
-    </footer>
-  </article>
-
-  {/* Template: PANTS */}
-  <article className="card bg-dark border-secondary shadow flex-shrink-0">
-    <header className="card-header py-1 border-secondary bg-black bg-opacity-25 text-center">
-      <span className="fw-bold text-uppercase text-primary" style={{ fontSize: '10px', letterSpacing: '1px' }}>Pants Template</span>
-    </header>
-    
-    <div className="card-body p-1">
-      <figure className="m-0 border border-secondary rounded overflow-hidden bg-white">
-        <canvas
-          ref={pantsCanvasRef}
-          width={585}
-          height={559}
-          className="img-fluid d-block mx-auto"
-          style={{ cursor: "crosshair", touchAction: "none", maxHeight: '15vh', objectFit: 'contain' }}
-          onPointerDown={(e) => startDrawing(e, "pants")}
-          onPointerMove={(e) => draw(e, "pants")}
-          onPointerUp={(e) => stopDrawing(e, "pants")}
-          onPointerLeave={(e) => stopDrawing(e, "pants")}
-          role="img"
-          aria-label="Draw Pants Area"
-        />
-      </figure>
-    </div>
-
-    <footer className="card-footer p-1 d-grid gap-1 border-secondary">
-      <button className="btn btn-xs btn-outline-info" onClick={() => handleImportClick("pants")}>
-        Import
-      </button>
-      <button className="btn btn-xs btn-primary" onClick={() => downloadTexture("pants")}>
-        Download Pants
-      </button>
-    </footer>
-  </article>
-</section>
+      <style>{`
+        .custom-scrollbar-y::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar-y::-webkit-scrollbar-thumb { background: rgba(0, 229, 255, 0.2); border-radius: 10px; }
+      `}</style>
+    </section>
   );
 };
 
