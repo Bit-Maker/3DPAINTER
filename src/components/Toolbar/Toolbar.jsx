@@ -1,7 +1,8 @@
 import { lightingProfiles, updateSceneLighting } from "../../utils/3DHelper";
 import { shadings, setShader, getShader, setShaderOpacity } from "../../utils/shadingHelper";
-//import logo from "../../assets/logo512.png"
 import { useState } from "react";
+import { Link } from "react-router-dom";
+
 const Toolbar = ({
   brushSize,
   setBrushSize,
@@ -23,230 +24,198 @@ const Toolbar = ({
   NewTemplate
 }) => {
   const [openShadingMenu, setOpenShadingMenu] = useState(false);
-
   const [, setSelectedShading] = useState("none");
+
+  // Estilos reutilizáveis para manter o código limpo
+  const glassStyle = {
+    background: "rgba(10, 10, 10, 0.8)",
+    backdropFilter: "blur(12px)",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+    zIndex: 2000
+  };
+
+  const neonButtonStyle = (active, color = "#00E5FF") => ({
+    border: `1px solid ${active ? color : "rgba(255,255,255,0.1)"}`,
+    backgroundColor: active ? "rgba(0, 229, 255, 0.1)" : "transparent",
+    color: active ? color : "#fff",
+    transition: "all 0.3s ease",
+    boxShadow: active ? `0 0 10px ${color}44` : "none"
+  });
+
   return (
-    <>
-      <header
-        style={{ zIndex: 2000 }}
-        className="position-fixed top-0 start-0 end-0"
-      >
-        <nav className="navbar navbar-dark bg-dark border-bottom border-secondary shadow-sm py-2">
-          <div className="container-fluid flex-nowrap align-items-center gap-3 overflow-x-auto custom-scrollbar-x pb-1">
-            <a
-              className="navbar-brand d-flex align-items-center flex-shrink-0 m-0"
-              href="/"
-            >           
-              
-            </a>
+    <header style={glassStyle} className="position-fixed top-0 start-0 end-0">
+      <nav className="navbar navbar-dark py-2">
+        <div className="container-fluid flex-nowrap align-items-center gap-3 overflow-x-auto custom-scrollbar-x pb-1">
+          
+          {/* LOGO REDUZIDA PARA O EDITOR */}
+          <Link className="navbar-brand fw-bold fs-5 m-0 p-0 text-white" to="/">
+            Blox<span style={{ color: "#00E5FF" }}>Tailor</span>
+          </Link>
 
-            <div className="d-flex align-items-center flex-nowrap gap-3 m-0 p-0 flex-grow-1">
-              <div
-                className="d-flex flex-column flex-shrink-0"
-                style={{ width: "120px" }}
-              >
-                <div className="d-flex justify-content-between align-items-center">
-                  <label
-                    htmlFor="brushSize"
-                    className="form-label small text-light opacity-75 mb-0"
-                    style={{ fontSize: "11px" }}
-                  >
-                    Size:
-                  </label>
-                  <output
-                    className="badge bg-primary ms-1"
-                    style={{ fontSize: "10px" }}
-                  >
-                    {brushSize}px
-                  </output>
-                </div>
-                <input
-                  type="range"
-                  className="form-range custom-range-dark form-range-sm"
-                  id="brushSize"
-                  min="1"
-                  max="500"
-                  value={brushSize}
-                  onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                />
+          <div className="vr text-white opacity-25 mx-2"></div>
+
+          {/* CONTROLES DE PINCEL */}
+          <div className="d-flex align-items-center gap-4 flex-grow-1">
+            
+            {/* Tamanho do Pincel */}
+            <div className="d-flex flex-column" style={{ minWidth: "140px" }}>
+              <div className="d-flex justify-content-between mb-1">
+                <label className="small text-uppercase fw-bold opacity-50" style={{ fontSize: "9px", letterSpacing: "1px" }}>Size</label>
+                <span className="badge p-0" style={{ color: "#00E5FF", fontSize: "10px" }}>{brushSize}px</span>
               </div>
+              <input
+                type="range"
+                className="form-range custom-slider"
+                min="1" max="500"
+                value={brushSize}
+                onChange={(e) => setBrushSize(parseInt(e.target.value))}
+              />
+            </div>
 
-              <div
-                className="d-flex flex-column flex-shrink-0"
-                style={{ width: "120px" }}
-              >
-                <div className="d-flex justify-content-between align-items-center">
-                  <label
-                    htmlFor="brushOpacity"
-                    className="form-label small text-light opacity-75 mb-0"
-                    style={{ fontSize: "11px" }}
-                  >
-                    Opacity:
-                  </label>
-                  <output
-                    className="badge bg-primary ms-1"
-                    style={{ fontSize: "10px" }}
-                  >
-                    {Math.round(brushOpacity * 100)}%
-                  </output>
-                </div>
-                <input
-                  type="range"
-                  className="form-range form-range-sm"
-                  id="brushOpacity"
-                  min="0.01"
-                  max="1"
-                  step="0.01"
-                  value={brushOpacity}
-                  onChange={(e) => setBrushOpacity(parseFloat(e.target.value))}
-                />
+            {/* Opacidade do Pincel */}
+            <div className="d-flex flex-column" style={{ minWidth: "140px" }}>
+              <div className="d-flex justify-content-between mb-1">
+                <label className="small text-uppercase fw-bold opacity-50" style={{ fontSize: "9px", letterSpacing: "1px" }}>Opacity</label>
+                <span className="badge p-0" style={{ color: "#FF007A", fontSize: "10px" }}>{Math.round(brushOpacity * 100)}%</span>
               </div>
+              <input
+                type="range"
+                className="form-range custom-slider-pink"
+                min="0.01" max="1" step="0.01"
+                value={brushOpacity}
+                onChange={(e) => setBrushOpacity(parseFloat(e.target.value))}
+              />
+            </div>
 
-              <div className="d-flex align-items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={() => setOpenShadingMenu(!openShadingMenu)}
-                  className={`btn btn-sm px-2 ${openShadingMenu ? "btn-warning" : "btn-outline-light"}`}
-                  aria-label={"Sombreamento"}
+            {/* BOTÃO DE SHADING COM DROPDOWN CUSTOMIZADO */}
+            <div className="position-relative">
+              <button
+                onClick={() => setOpenShadingMenu(!openShadingMenu)}
+                className="btn btn-sm px-3 rounded-pill fw-bold"
+                style={neonButtonStyle(openShadingMenu, "#7928CA")}
+              >
+                ✨ Shading
+              </button>
+
+              {openShadingMenu && (
+                <div 
+                  className="position-fixed mt-5 p-3 rounded-4 shadow-lg border"
+                  style={{ 
+                    background: "#0F0F0F", 
+                    borderColor: "rgba(121, 40, 202, 0.5)",
+                    width: "280px",
+                    zIndex: 3000
+                  }}
                 >
-                  Shading
-                  {openShadingMenu && (
-                    <div onClick={(e)=> {e.stopPropagation()}}
-                      className="position-fixed bg-dark border border-secondary rounded p-1 mt-4 col-2 overflow-y-auto h-50"
-                      style={{ zIndex: 1000 }}
-                    >
-                      {shadings.map((fileUrl) =>
-                        fileUrl === "none" ? (
-                          <img
-                            onClick={(e) => {
-                              setSelectedShading(
-                                process.env.PUBLIC_URL + fileUrl,
-                              );
-                              setShader(process.env.PUBLIC_URL + fileUrl);
-                              handleAutoUV();
-                            }}
-                            alt={"No Shaders"}          
-                            className={`img-thumbnail ${getShader() === fileUrl && "border-5 border-primary"}`} 
-                            style={{ width: "100px", height: "100px" }}
-                          ></img>
+                  <label className="small text-white opacity-50 mb-2 d-block">Select Template:</label>
+                  <div className="d-grid grid-cols-3 gap-2 overflow-y-auto" style={{ maxHeight: "200px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
+                    {shadings.map((fileUrl) => (
+                      <div 
+                        key={fileUrl}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const finalUrl = process.env.PUBLIC_URL + fileUrl;
+                          setSelectedShading(finalUrl);
+                          setShader(finalUrl);
+                          handleAutoUV();
+                        }}
+                        className="rounded-3  overflow-hidden position-relative"
+                        style={{ 
+                          height: "60px", 
+                          cursor: "pointer",
+                          background: "white",
+                          border: getShader() === fileUrl ? "2px solid #00E5FF" : "1px solid rgba(255,255,255,0.1)"
+                        }}
+                      >
+                        {fileUrl === "none" ? (
+                          <div className="w-100 h-100 d-flex align-items-center justify-content-center small text-muted">Empty</div>
                         ) : (
-                          <img
-                            src={process.env.PUBLIC_URL + fileUrl}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedShading(
-                                process.env.PUBLIC_URL + fileUrl,
-                              );
-                              setShader(process.env.PUBLIC_URL + fileUrl);
-                              handleAutoUV();
-                            }}
-                            alt="Shading Option"
-                            className={`img-thumbnail m-1 ${getShader() === fileUrl && "border-5 border-primary"}`}
-                            style={{ width: "100px", cursor: "pointer" }}
-                          />
-                        ),
-                      )}
-
-                      <div className="col-1 w-100">
-                      <label
-                    htmlFor="brushOpacity"
-                    className="form-label text-light mt-2 w-100"
-                  >
-                    Opacity:
-                  </label>
-                         <input
-                  type="range"
-                  className="w-50"
-                  id="brushOpacity"
-                  min="0.01"
-                  max="1"
-                  step="0.01"
-                  value={shadingOpacity}
-                  onChange={(e) => {setShadingOpacity(parseFloat(e.target.value)); setShaderOpacity(parseFloat(e.target.value)); handleAutoUV()}}
-                />
-                        
+                          <img src={process.env.PUBLIC_URL + fileUrl} alt="Shader" className="w-100 h-100 object-fit-cover" />
+                        )}
                       </div>
-                    </div>
-                  )}
-                </button>
-              </div>
-
-              <div className="vr text-secondary flex-shrink-0"></div>
-
-              <div className="d-flex gap-1 flex-shrink-0">
-                <button
-                  className="btn btn-outline-light btn-sm px-2"
-                  onClick={handleUndo}
-                  title="Undo"
-                  aria-label="Undo"
-                >
-                  <span aria-hidden="true">↩️</span>
-                </button>
-                <button
-                  className="btn btn-outline-light btn-sm px-2"
-                  onClick={handleRedo}
-                  title="Redo"
-                  aria-label="Redo"
-                >
-                  <span aria-hidden="true">↪️</span>
-                </button>
-                <button
-                  className="btn btn-outline-danger btn-sm"
-                  onClick={handleClear}
-                >
-                  Clear
-                </button>
-                <button
-                  className="btn btn-outline-warning btn-sm"
-                  onClick={NewTemplate}
-                >
-                  New Template
-                </button>
-              </div>
-
-              <div className="vr text-secondary flex-shrink-0"></div>
-
-              <div className="d-flex align-items-center gap-2 flex-shrink-0">
-                <div
-                  className="btn-group"
-                  role="group"
-                  aria-label="Modos de iluminação"
-                >
-                  {Object.keys(lightingProfiles).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => {
-                        updateSceneLighting(
-                          scene,
-                          myAmbLight,
-                          myDirLight,
-                          mode,
-                        );
-                        setLightingMode(mode);
+                    ))}
+                  </div>
+                  
+                  <div className="mt-3 border-top pt-2 border-secondary">
+                    <label className="small opacity-50 mb-1 d-block">Intensity:</label>
+                    <input
+                      type="range"
+                      className="w-100 custom-slider"
+                      min="0.01" max="1" step="0.01"
+                      value={shadingOpacity}
+                      onChange={(e) => {
+                        setShadingOpacity(parseFloat(e.target.value));
+                        setShaderOpacity(parseFloat(e.target.value));
+                        handleAutoUV();
                       }}
-                      className={`btn btn-sm btn-dark border-secondary px-2 ${mode === lightingMode ? "active border-primary" : ""}`}
-                      title={`Mode ${mode}`}
-                    >
-                      {mode === "midday" && "☀️"}
-                      {mode === "sunset" && "🌅"}
-                      {mode === "night" && "🌑"}
-                      {mode === "studio" && "🛠️"}
-                    </button>
-                  ))}
+                    />
+                  </div>
                 </div>
-
-                <button
-                  onClick={() => setIsAnimating(!isAnimating)}
-                  className={`btn btn-sm px-2 ${isAnimating ? "btn-warning" : "btn-outline-warning"}`}
-                  aria-label={isAnimating ? "Pausar" : "Play"}
-                >
-                  {isAnimating ? "⏸️" : "▶️"}
-                </button>
-              </div>
+              )}
             </div>
           </div>
-        </nav>
-      </header>
-    </>
+
+          {/* AÇÕES (UNDO, REDO, CLEAR) */}
+          <div className="d-flex align-items-center gap-2">
+            <div className="btn-group bg-dark rounded-pill p-1 border border-secondary border-opacity-25">
+              <button onClick={handleUndo} className="btn btn-sm btn-dark rounded-pill border-0 px-3" title="Undo">↩</button>
+              <button onClick={handleRedo} className="btn btn-sm btn-dark rounded-pill border-0 px-3" title="Redo">↪</button>
+            </div>
+            
+            <button onClick={handleClear} className="btn btn-sm px-3 rounded-pill fw-bold btn-outline-danger border-opacity-25" style={{ fontSize: "12px" }}>
+              Clear
+            </button>
+            <button onClick={NewTemplate} className="btn btn-sm px-3 rounded-pill fw-bold text-black" style={{ background: "#00E5FF", fontSize: "12px" }}>
+              New Template
+            </button>
+          </div>
+
+          <div className="vr text-white opacity-25 mx-2"></div>
+
+          {/* ILUMINAÇÃO E ANIMAÇÃO */}
+          <div className="d-flex align-items-center gap-2">
+            <div className="btn-group p-1 bg-dark rounded-pill border border-secondary border-opacity-25 shadow-sm">
+              {Object.keys(lightingProfiles).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => {
+                    updateSceneLighting(scene, myAmbLight, myDirLight, mode);
+                    setLightingMode(mode);
+                  }}
+                  className={`btn btn-sm rounded-pill border-0 px-2 ${mode === lightingMode ? "bg-secondary bg-opacity-50" : ""}`}
+                >
+                  {mode === "midday" && "☀️"}
+                  {mode === "sunset" && "🌅"}
+                  {mode === "night" && "🌑"}
+                  {mode === "studio" && "🛠️"}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setIsAnimating(!isAnimating)}
+              className="btn btn-sm rounded-circle d-flex align-items-center justify-content-center"
+              style={{ 
+                width: "32px", height: "32px", 
+                backgroundColor: isAnimating ? "#FF007A" : "rgba(255,255,255,0.1)",
+                color: "#fff", border: "none"
+              }}
+            >
+              {isAnimating ? "⏸" : "▶"}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* CSS INLINE PARA CUSTOMIZAR OS SLIDERS (Importante!) */}
+      <style>{`
+        .custom-slider::-webkit-slider-runnable-track { background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; }
+        .custom-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: #00E5FF; margin-top: -5px; box-shadow: 0 0 8px #00E5FF; }
+        
+        .custom-slider-pink::-webkit-slider-runnable-track { background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; }
+        .custom-slider-pink::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: #FF007A; margin-top: -5px; box-shadow: 0 0 8px #FF007A; }
+      `}</style>
+    </header>
   );
 };
 

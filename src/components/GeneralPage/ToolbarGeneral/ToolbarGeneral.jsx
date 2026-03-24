@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { lightingProfiles, updateSceneLighting } from "../../../utils/3DHelper";
+import { Link } from "react-router-dom";
+
 const Toolbar = ({
   brushSize,
   setBrushSize,
@@ -10,141 +12,117 @@ const Toolbar = ({
   myAmbLight,
   myDirLight,
   handleRedo,
-  isAnimating,
-  setIsAnimating,
   lightingMode,
   setLightingMode,
-  handleAutoUV,
-  shadingOpacity,
-  setShadingOpacity,
-  NewTemplate,
 }) => {
-  const [openShadingMenu, setOpenShadingMenu] = useState(false);
 
-  const [, setSelectedShading] = useState("none");
+  // Estilos reutilizáveis para manter o código limpo
+  const glassStyle = {
+    background: "rgba(10, 10, 10, 0.8)",
+    backdropFilter: "blur(12px)",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+    zIndex: 2000
+  };
   return (
-    <>
-      <header
-        style={{ zIndex: 2000 }}
-        className="position-fixed top-0 start-0 end-0"
-      >
-        <nav className="navbar navbar-dark bg-dark border-bottom border-secondary shadow-sm py-2">
-          <div className="container-fluid flex-nowrap align-items-center gap-3 overflow-x-auto custom-scrollbar-x pb-1">
-            <a
-              className="navbar-brand d-flex align-items-center flex-shrink-0 m-0"
-              href="/"
-            ></a>
+    <header style={glassStyle} className="position-fixed top-0 start-0 end-0">
+      <nav className="navbar navbar-dark py-2">
+        <div className="container-fluid flex-nowrap align-items-center gap-3 overflow-x-auto custom-scrollbar-x pb-1">
+          
+          {/* LOGO REDUZIDA PARA O EDITOR */}
+          <Link className="navbar-brand fw-bold fs-5 m-0 p-0 text-white" to="/">
+            Blox<span style={{ color: "#00E5FF" }}>Tailor</span>
+          </Link>
 
-            <div className="d-flex align-items-center flex-nowrap gap-3 m-0 p-0 flex-grow-1">
-              <div
-                className="d-flex flex-column flex-shrink-0"
-                style={{ width: "120px" }}
-              >
-                <div className="d-flex justify-content-between align-items-center">
-                  <label
-                    htmlFor="brushSize"
-                    className="form-label small text-light opacity-75 mb-0"
-                    style={{ fontSize: "11px" }}
-                  >
-                    Size:
-                  </label>
-                  <output
-                    className="badge bg-primary ms-1"
-                    style={{ fontSize: "10px" }}
-                  >
-                    {brushSize}px
-                  </output>
-                </div>
-                <input
-                  type="range"
-                  className="form-range custom-range-dark form-range-sm"
-                  id="brushSize"
-                  min="1"
-                  max="500"
-                  value={brushSize}
-                  onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                />
+          <div className="vr text-white opacity-25 mx-2"></div>
+
+          {/* CONTROLES DE PINCEL */}
+          <div className="d-flex align-items-center gap-4 flex-grow-1">
+            
+            {/* Tamanho do Pincel */}
+            <div className="d-flex flex-column" style={{ minWidth: "140px" }}>
+              <div className="d-flex justify-content-between mb-1">
+                <label className="small text-uppercase fw-bold opacity-50" style={{ fontSize: "9px", letterSpacing: "1px" }}>Size</label>
+                <span className="badge p-0" style={{ color: "#00E5FF", fontSize: "10px" }}>{brushSize}px</span>
               </div>
+              <input
+                type="range"
+                className="form-range custom-slider"
+                min="1" max="500"
+                value={brushSize}
+                onChange={(e) => setBrushSize(parseInt(e.target.value))}
+              />
+            </div>
 
-              <div
-                className="d-flex flex-column flex-shrink-0"
-                style={{ width: "120px" }}
-              >
-                <div className="d-flex justify-content-between align-items-center">
-                  <label
-                    htmlFor="brushOpacity"
-                    className="form-label small text-light opacity-75 mb-0"
-                    style={{ fontSize: "11px" }}
-                  >
-                    Opacity:
-                  </label>
-                  <output
-                    className="badge bg-primary ms-1"
-                    style={{ fontSize: "10px" }}
-                  >
-                    {Math.round(brushOpacity * 100)}%
-                  </output>
-                </div>
-                <input
-                  type="range"
-                  className="form-range form-range-sm"
-                  id="brushOpacity"
-                  min="0.01"
-                  max="1"
-                  step="0.01"
-                  value={brushOpacity}
-                  onChange={(e) => setBrushOpacity(parseFloat(e.target.value))}
-                />
+            {/* Opacidade do Pincel */}
+            <div className="d-flex flex-column" style={{ minWidth: "140px" }}>
+              <div className="d-flex justify-content-between mb-1">
+                <label className="small text-uppercase fw-bold opacity-50" style={{ fontSize: "9px", letterSpacing: "1px" }}>Opacity</label>
+                <span className="badge p-0" style={{ color: "#FF007A", fontSize: "10px" }}>{Math.round(brushOpacity * 100)}%</span>
               </div>
+              <input
+                type="range"
+                className="form-range custom-slider-pink"
+                min="0.01" max="1" step="0.01"
+                value={brushOpacity}
+                onChange={(e) => setBrushOpacity(parseFloat(e.target.value))}
+              />
+            </div>            
+          </div>
 
-              <div className="vr text-secondary flex-shrink-0"></div>
-
-              <div className="d-flex gap-1 flex-shrink-0">
-                <button
-                  className="btn btn-outline-light btn-sm px-2"
-                  onClick={handleUndo}
-                  title="Undo"
-                  aria-label="Undo"
-                >
-                  <span aria-hidden="true">↩️</span>
-                </button>
-                <button
-                  className="btn btn-outline-light btn-sm px-2"
-                  onClick={handleRedo}
-                  title="Redo"
-                  aria-label="Redo"
-                >
-                  <span aria-hidden="true">↪️</span>
-                </button>
-                <button
-                  className="btn btn-outline-danger btn-sm"
-                  onClick={handleClear}
-                >
-                  Clear
-                </button>
-                <button
-                  className="btn btn-outline-warning btn-sm"
-                  onClick={NewTemplate}
-                >
-                  New Template
-                </button>
-                <div className="import-section">
-                  <button
-                  className="btn btn-outline-primary"
-                    style={{ zIndex: "10000", position: "absolute" }}
+          {/* AÇÕES (UNDO, REDO, CLEAR) */}
+          <div className="d-flex align-items-center gap-2">
+            <div className="btn-group bg-dark rounded-pill p-1 border border-secondary border-opacity-25">
+              <button onClick={handleUndo} className="btn btn-sm btn-dark rounded-pill border-0 px-3" title="Undo">↩</button>
+              <button onClick={handleRedo} className="btn btn-sm btn-dark rounded-pill border-0 px-3" title="Redo">↪</button>
+            </div>
+            
+            <button onClick={handleClear} className="btn btn-sm px-3 rounded-pill fw-bold btn-outline-danger border-opacity-25" style={{ fontSize: "12px" }}>
+              Clear
+            </button>
+            <button
+                  className="btn btn-sm px-3 rounded-pill fw-bold btn-outline-primary border-opacity-25"
                     onClick={() =>
                       document.getElementById("model-upload").click()
                     }
                   >
                     Carregar Modelo (.OBJ / .FBX)
                   </button>
-                </div>
-              </div>
+          </div>
+
+          <div className="vr text-white opacity-25 mx-2"></div>
+
+          {/* ILUMINAÇÃO E ANIMAÇÃO */}
+          <div className="d-flex align-items-center gap-2">
+            <div className="btn-group p-1 bg-dark rounded-pill border border-secondary border-opacity-25 shadow-sm">
+              {Object.keys(lightingProfiles).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => {
+                    updateSceneLighting(scene, myAmbLight, myDirLight, mode);
+                    setLightingMode(mode);
+                  }}
+                  className={`btn btn-sm rounded-pill border-0 px-2 ${mode === lightingMode ? "bg-secondary bg-opacity-50" : ""}`}
+                >
+                  {mode === "midday" && "☀️"}
+                  {mode === "sunset" && "🌅"}
+                  {mode === "night" && "🌑"}
+                  {mode === "studio" && "🛠️"}
+                </button>
+              ))}
             </div>
           </div>
-        </nav>
-      </header>
-    </>
+        </div>
+      </nav>
+
+      {/* CSS INLINE PARA CUSTOMIZAR OS SLIDERS (Importante!) */}
+      <style>{`
+        .custom-slider::-webkit-slider-runnable-track { background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; }
+        .custom-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: #00E5FF; margin-top: -5px; box-shadow: 0 0 8px #00E5FF; }
+        
+        .custom-slider-pink::-webkit-slider-runnable-track { background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; }
+        .custom-slider-pink::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: #FF007A; margin-top: -5px; box-shadow: 0 0 8px #FF007A; }
+      `}</style>
+    </header>
   );
 };
 
