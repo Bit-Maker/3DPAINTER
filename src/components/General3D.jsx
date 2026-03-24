@@ -8,7 +8,7 @@ import {
   performBucketFill,
   performWrapLine,
 } from "../utils/paintHelper";
-import { generateAutoUVs } from "../utils/uvHelper";
+//import { generateAutoUVs } from "../utils/uvHelper";
 import {  createNewCanvas, loadTemplateToCanvas } from "../utils/canvasHelpers";
 import { isMobile } from "../utils/mobile";
 const General3D = ({
@@ -311,6 +311,7 @@ useEffect(() => {
       undefined,
       (error) => console.error("Erro ao carregar modelo:", error)
     );
+    // eslint-disable-next-line
   }, [uploadedModel?.url]);
   const paint = (e) => {
     if (!modelRef.current || !activeLayerId) return;
@@ -358,14 +359,6 @@ useEffect(() => {
       const y = (1 - intersect.uv.y) * 1024;
       const mx = mintersect ? mintersect.uv.x * 1024 : null;
       const my = mintersect ? (1 - mintersect.uv.y) * 1024 : null;
-      const isBackFace = () => {
-        return (
-          intersect.face &&
-          intersect.face.a < 6 &&
-          intersect.face.b < 6 &&
-          intersect.face.c < 6
-        );
-      };
       if (faceLockMode && intersect.face) {
         layerCtx.save();
         const uvAttr = intersect.object.geometry.attributes.uv;
@@ -508,7 +501,6 @@ useEffect(() => {
       if (intersects.length > 0 && intersects[0].uv) {
         const intersect = intersects[0];
         const uv = intersect.uv;
-        const meshName = intersect.object.name.toLowerCase();
         let targetChannel = "main";
 
         const channelData = layers.find((l) => l.id === activeLayerId)

@@ -73,7 +73,7 @@ console.log(undoStack.current)
 };
 
 
-const handleUndo = () => {
+const handleUndo = useCallback(() => {
   if (undoStack.current.length === 0) return;
 
   const lastAction = undoStack.current.pop();
@@ -90,9 +90,9 @@ const handleUndo = () => {
   redoStack.current =  [...redoStack.current, lastAction];
   undoStack.current =  undoStack.current.slice(0, -1);
   updateComposition()
-};
+},[updateComposition,layers])
 
-const handleRedo = () => {
+const handleRedo = useCallback(() => {
   if (redoStack.current.length === 0) return;
 
   const action = redoStack.current.pop();
@@ -105,14 +105,12 @@ const handleRedo = () => {
   undoStack.current =  [...undoStack.current, action];
   redoStack.current =   redoStack.current.slice(0, -1);
   updateComposition()
-};
+},[updateComposition,layers])
 
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
-    const reader = new FileReader();
     const extension = file.name.split(".").pop().toLowerCase();
 
     const url = URL.createObjectURL(file);
@@ -227,21 +225,6 @@ const handleRedo = () => {
     }
   };
 
-  const createCanvasFromBase64 = (base64) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = base64;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = 585;
-        canvas.height = 559;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas);
-      };
-    });
-  };
-
   useEffect(() => {
     const initApp = async () => {
       if (!finalCompositionRef.current) {
@@ -259,12 +242,6 @@ const handleRedo = () => {
 
           const restoredLayers = await Promise.all(
             backup.layers.map(async (layer) => {
-              const shirtCanvas = await createCanvasFromBase64(
-                layer.images.shirt,
-              );
-              const pantsCanvas = await createCanvasFromBase64(
-                layer.images.pants,
-              );
               return {
                 ...layer,
                 channels: {
