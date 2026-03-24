@@ -85,7 +85,7 @@ const Toolbar = ({
                       document.getElementById("model-upload").click()
                     }
                   >
-                    Carregar Modelo (.OBJ / .FBX)
+                    Load Model (.OBJ / .FBX)
                   </button>
           </div>
 
