@@ -498,16 +498,6 @@ const Scene3D = ({
       const x = intersect.uv.x * 585;
       const y = (1 - intersect.uv.y) * 559;
 
-
-      const isBackFace = () => {
-        return (
-          intersect.face &&
-          intersect.face.a < 6 &&
-          intersect.face.b < 6 &&
-          intersect.face.c < 6
-        );
-      };
-
       if (isMirrorEnabled) {
       // 1. Usamos o modelRef.current (o personagem inteiro) como centro de referência
       const localPoint = modelRef.current.worldToLocal(intersect.point.clone());
