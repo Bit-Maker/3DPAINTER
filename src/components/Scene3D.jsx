@@ -472,25 +472,16 @@ const Scene3D = ({
       false,
     );
 
-    mouseRef.current.x =
-      ((window.innerWidth - e.clientX) / window.innerWidth) * 2 - 1;
-    mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
-    raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
-
-    const mintersects = raycasterRef.current.intersectObjects(
-      objectsToTest,
-      false,
-    );
-
     if (intersects.length > 0 && intersects[0].uv) {
       const intersect = intersects[0];
-      const mintersect = mintersects[0];
+      let mintersect = null;
+    let mx = null;
+    let my = null;
       const meshName = intersect.object.name.toLowerCase();
       let targetChannel = "shirt";
       if (meshName.includes("leg")) {
         targetChannel = "pants";
       }
-      console.log(intersect.object);
       setActiveChannel(targetChannel);
       const isSameMember =
         lastPaintTarget.current.objectId === intersect.object.id;
@@ -506,8 +497,7 @@ const Scene3D = ({
 
       const x = intersect.uv.x * 585;
       const y = (1 - intersect.uv.y) * 559;
-      const mx = mintersect ? mintersect.uv.x * 585 : null;
-      const my = mintersect ? (1 - mintersect.uv.y) * 559 : null;
+
 
       const isBackFace = () => {
         return (
@@ -517,6 +507,48 @@ const Scene3D = ({
           intersect.face.c < 6
         );
       };
+
+      if (isMirrorEnabled) {
+      // 1. Usamos o modelRef.current (o personagem inteiro) como centro de referência
+      const localPoint = modelRef.current.worldToLocal(intersect.point.clone());
+
+      // 2. Invertemos o X. Isso faz um clique no Braço Esquerdo "pular" para o espaço do Braço Direito
+      localPoint.x *= -1;
+
+      // 3. Convertendo de volta para o mundo
+      const mirroredWorldPoint = modelRef.current.localToWorld(localPoint.clone());
+
+      // 4. Espelhando a Normal (a direção que o raio vai atirar).
+      // Pegamos a normal do mundo real e usamos um truque de soma vetorial para espelhar
+      // com perfeição em relação ao centro do personagem.
+      const normalMatrix = new THREE.Matrix3().getNormalMatrix(intersect.object.matrixWorld);
+      const worldNormal = intersect.face.normal.clone().applyMatrix3(normalMatrix).normalize();
+      
+      const pointPlusNormal = intersect.point.clone().add(worldNormal);
+      const localPointPlusNormal = modelRef.current.worldToLocal(pointPlusNormal);
+      localPointPlusNormal.x *= -1;
+      const mirroredWorldPointPlusNormal = modelRef.current.localToWorld(localPointPlusNormal);
+      
+      const mirroredWorldNormal = mirroredWorldPointPlusNormal.sub(mirroredWorldPoint).normalize();
+
+      // 5. O raio nasce um pouquinho fora da malha oposta e atira contra ela
+      const rayOrigin = mirroredWorldPoint.clone().add(mirroredWorldNormal.clone().multiplyScalar(0.5));
+      const rayDirection = mirroredWorldNormal.clone().multiplyScalar(-1);
+
+      const mirrorRaycaster = new THREE.Raycaster(rayOrigin, rayDirection);
+      mirrorRaycaster.near = 0;
+      mirrorRaycaster.far = 1.0;
+
+      // 6. A MÁGICA AQUI: Testamos contra 'objectsToTest', permitindo que um clique 
+      // no Braço Esquerdo atinja a malha do Braço Direito!
+      const mirrorIntersects = mirrorRaycaster.intersectObjects(objectsToTest, false);
+
+      if (mirrorIntersects.length > 0 && mirrorIntersects[0].uv) {
+        mintersect = mirrorIntersects[0];
+        mx = mintersect.uv.x * CANVAS_W;
+        my = (1 - mintersect.uv.y) * CANVAS_H;
+      }
+    }
 
       // 4. Face Lock (Recorte UV)
       if (faceLockMode && intersect.face) {
@@ -534,8 +566,6 @@ const Scene3D = ({
         layerCtx.closePath();
         layerCtx.clip();
       }
-      console.log(intersect.face);
-
       if (isBucketMode) {
         if (isMirrorEnabled) {
           performBucketFill(
@@ -587,13 +617,13 @@ const Scene3D = ({
           isEraser,
           activeChannel,
         );
-      } else {
+      } else if(isPaintMode) {
         const hit = intersects[0];
         const pressure = isMobile() ? 1 : e.pressure; // Fallback para dispositivos sem suporte a pressão
         const distance = hit.distance;
         const distanceFactor = distance * 0.3;
 
-        if (isMirrorEnabled && isBackFace()) {
+        if (isMirrorEnabled) {
           performPaint(
             layerCtx,
             x,
