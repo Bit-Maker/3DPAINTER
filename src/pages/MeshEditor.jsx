@@ -14,7 +14,7 @@ import { Analytics } from "@vercel/analytics/react";
 
 function MeshEditor() {
   const [brushColor, setBrushColor] = useState("#000000");
-  const [BodyColor, setBodyColor] = useState("#ffd78b");
+  const [BodyColor, setBodyColor] = useState("#ffffff");
   const [brushSize, setBrushSize] = useState(5);
   const [brushOpacity, setBrushOpacity] = useState(1.0);
   const [isEraser, setIsEraser] = useState(false);
@@ -232,7 +232,6 @@ const handleRedo = useCallback(() => {
           main: createNewCanvas("transparent", 1024, 1024),
         };
       }
-
       const savedData = localStorage.getItem("roblox_editor_backup");
 
       if (savedData) {

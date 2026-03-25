@@ -187,6 +187,7 @@ const General3D = ({
     scene.add(dirLight);
     setAmbientLight(scene.children.find((c) => c.isAmbientLight));
     setDirLight(dirLight);
+    setModel({url: "true"})
 
     materialRef.current = new THREE.MeshBasicMaterial({
       side: THREE.DoubleSide,
@@ -239,12 +240,20 @@ const General3D = ({
   }, [isAnimating]);
 
 useEffect(() => {
-    if (!uploadedModel?.url || modelRef.current?.userData?.sourceUrl === uploadedModel.url) {
-      return;
-    }
-    const loader = uploadedModel.extension === "fbx" ? new FBXLoader() : new OBJLoader();
-    const modelPath = uploadedModel.url;
-    loader.load(
+  console.log(uploadedModel)
+  const modelPath = uploadedModel?.url || `${process.env.PUBLIC_URL}/models/cubo.obj`;   
+  const extension = uploadedModel?.extension || "obj";
+  const loader = extension === "fbx" ? new FBXLoader() : new OBJLoader();
+  if(!uploadedModel) {
+    setModel(
+      {
+       url: modelPath,
+      extension: extension,
+      name: "cubo",
+      }
+    )
+  }
+  loader.load(
       modelPath,
       (object) => {
         if (modelRef.current) sceneRef.current.remove(modelRef.current);
@@ -294,6 +303,7 @@ useEffect(() => {
         model.traverse((child) => {
           if (child.isMesh && finalComposition?.main?.canvas) {
             parts.push(child.name);
+
          //   child.geometry = generateAutoUVs(child.geometry);
             child.material = new THREE.MeshStandardMaterial({
               map: new THREE.CanvasTexture(finalComposition.main.canvas), // Use CanvasTexture
@@ -305,14 +315,14 @@ useEffect(() => {
         modelRef.current = model;
         sceneRef.current.add(model);
         if (fitCameraToObject) fitCameraToObject(model);
-        setModel(model);
         handleModelLoaded(model.children);
+        onPaintEnd()
       },
       undefined,
       (error) => console.error("Erro ao carregar modelo:", error)
     );
     // eslint-disable-next-line
-  }, [uploadedModel?.url]);
+  }, [uploadedModel?.url, sceneRef.current]);
   const paint = (e) => {
     if (!modelRef.current || !activeLayerId) return;
     const targetLayer = layers.find((l) => l.id === activeLayerId);
